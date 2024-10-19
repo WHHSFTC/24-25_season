@@ -14,9 +14,9 @@ import com.qualcomm.robotcore.hardware.VoltageSensor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import java.util.List;
 
-@Disabled
+//@Disabled
 @TeleOp
-abstract public class intothedeep_tele extends OpMode{
+public class intothedeep_tele extends OpMode{
 
     DcMotor rf;
     DcMotor lf;
@@ -36,7 +36,7 @@ abstract public class intothedeep_tele extends OpMode{
         lb.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
     }
 
-    @Override
+    //@Override
     public void start(){
 
     }
