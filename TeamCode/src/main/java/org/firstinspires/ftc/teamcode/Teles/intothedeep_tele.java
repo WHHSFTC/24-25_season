@@ -36,10 +36,12 @@ public class intothedeep_tele extends OpMode{
     DcMotor rb;
     DcMotor lb;
     DcMotor extendo;
+
+    TouchSensor extendoSlidesLimit;
     Servo alpha;
     Servo beta;
-    Servo wrist;
-   /* DcMotor rs;
+    /*Servo wrist;
+    DcMotor rs;
     DcMotor ls;*/
 
     ElapsedTime timer = new ElapsedTime(ElapsedTime.Resolution.MILLISECONDS);
@@ -50,8 +52,8 @@ public class intothedeep_tele extends OpMode{
     double loopCounter = 0.0;
     public static double slideTargetGain = 50.0;
     public static double slideMin = 0.0;
-    public static double slideMax = 600.0;
-    double slidePositionTarget;
+    public static double slideMax = 450.0;
+    public static double slidePositionTarget;
 
     Gamepad gamepad1prev = new Gamepad();
     Gamepad gamepad2prev = new Gamepad();
@@ -59,6 +61,8 @@ public class intothedeep_tele extends OpMode{
     SlidesPID slidesPidExtendo;
     /*SlidesPID slidesPidRight;
     SlidesPID slidesPidLeft;*/
+
+    boolean extendoSlidesPressed = true;
 
 
     @Override
@@ -81,13 +85,15 @@ public class intothedeep_tele extends OpMode{
 
         alpha = hardwareMap.get(Servo.class, "alpha");
         beta = hardwareMap.get(Servo.class, "beta");
-        wrist = hardwareMap.get(Servo.class, "wrist");
+        //wrist = hardwareMap.get(Servo.class, "wrist");
 
         rf.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         lf.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         rb.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         lb.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         extendo.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+
+        extendoSlidesLimit = hardwareMap.get(TouchSensor.class, "extendoSlidesLimit");
     }
 
     //@Override
@@ -99,8 +105,6 @@ public class intothedeep_tele extends OpMode{
 
     @Override
     final public void loop(){
-
-        slidesPidExtendo.update(extendo.getCurrentPosition(), timeGap);
 
         timeGap = timer.milliseconds();
         timer.reset();
@@ -129,12 +133,28 @@ public class intothedeep_tele extends OpMode{
         }
 
         extendo.setPower(slidesPidExtendo.calculatePower(slidePositionTarget));
+        slidesPidExtendo.update(extendo.getCurrentPosition(), timeGap);
+
+        if (extendoSlidesLimit.isPressed()) {
+            if (!extendoSlidesPressed) {
+                extendo.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+            }
+            extendoSlidesPressed = true;
+        } else {
+            extendoSlidesPressed = false;
+        }
 
         //intake
-        if(Math.abs(gamepad2.right_stick_y) > 0.01 || Math.abs(gamepad2.right_stick_x) > 0.01){
-            alpha.setPosition(((gamepad2.right_stick_y + 1)/2) + ((gamepad2.right_stick_x + 1)/2));
-            beta.setPosition(((gamepad2.right_stick_y + 1)/2) - ((gamepad2.right_stick_x + 1)/2));
+       if(Math.abs(gamepad2.right_stick_y) > 0.01 || Math.abs(gamepad2.right_stick_x) > 0.01){
+            alpha.setPosition((-gamepad2.right_stick_y + 1)/2);
+            beta.setPosition((gamepad2.right_stick_y + 1)/2);
+
+//           alpha.setPosition(gamepad2.right_stick_x/2 + 0.5);
+//           beta.setPosition(gamepad2.right_stick_y/2 + 0.5);
         }
+
+
+
 
 
         //drivetrain
@@ -165,8 +185,12 @@ public class intothedeep_tele extends OpMode{
         telemetry.addData("extendo position", "extendo position: " + extendo.getCurrentPosition());
         telemetry.addData("extendo power", "extendo power: " + extendo.getPower());
         telemetry.addData("time per loop", timePerLoop);
-        telemetry.addData("gampead 2 left analog value", "gamepad 2 analog value: " + gamepad2.left_stick_y);
+        telemetry.addData("gampead 2 left stick analog value", "gamepad 2 left stick analog value: " + gamepad2.left_stick_y);
+        telemetry.addData("gampead 2 right stick analog value", "gamepad 2 right stick analog value: " + gamepad2.right_stick_y);
         telemetry.addData("Error Extendo", "Error Extendo: " + (slidePositionTarget - extendo.getCurrentPosition()));
+        telemetry.addData("extendo slides pressed", "extendo slides pressed: " + extendoSlidesPressed);
+        telemetry.addData("alpha servo position", "alpha servo posotion: " + alpha.getPosition());
+        telemetry.addData("beta servo position", "beta servo position: " + beta.getPosition());
         telemetry.update();
 
         packet.put("slides target", slidePositionTarget);

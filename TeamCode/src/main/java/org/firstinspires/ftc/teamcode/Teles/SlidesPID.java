@@ -7,9 +7,9 @@ import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 @Config
 public class SlidesPID {
     FtcDashboard dashboard = FtcDashboard.getInstance();
-    public static double Kp = 0.0;
+    public static double Kp = 0.030;
     public static double Ki = 0.0;
-    public static double Kd = 0.0;
+    public static double Kd = 0.005;
     private double integral = 0.0;
     private double prevError = 0.0;
     private double prevTarget = 0.0;
