@@ -36,13 +36,20 @@ public class intothedeep_tele extends OpMode{
     DcMotor rb;
     DcMotor lb;
     DcMotor extendo;
+    DcMotor ls;
+    DcMotor rs;
+    DcMotor ms;
 
     TouchSensor extendoSlidesLimit;
+    //TouchSensor verticalSlidesLimit;
     Servo alpha;
     Servo beta;
-    /*Servo wrist;
-    DcMotor rs;
-    DcMotor ls;*/
+    Servo intakeClaw;
+    Servo outputClaw;
+    Servo deltaRight;
+    Servo deltaLeft;
+    Servo outputWrist;
+
 
     ElapsedTime timer = new ElapsedTime(ElapsedTime.Resolution.MILLISECONDS);
     ElapsedTime totalRunTime = new ElapsedTime(ElapsedTime.Resolution.MILLISECONDS);
@@ -50,20 +57,35 @@ public class intothedeep_tele extends OpMode{
     double timeGap;
     double loopCumulativeTime = 0.0;
     double loopCounter = 0.0;
-    public static double slideTargetGain = 50.0;
+
+
+    double verticalPower = 0.0;
+    public static double slideTargetGainEx = 50.0;
+    public static double slideTargetGainVe = 80.0;
     public static double slideMin = 0.0;
-    public static double slideMax = 450.0;
-    public static double slidePositionTarget;
+    public static double slideMaxEx = 450.0;
+    public static double slideMaxVe = 0.0;
+    public static double slidePositionTargetEx;
+    public static double slidePositionTargetVe;
+
+
+    public static double outputClawClosedPosition = 0.30;
+    public static double outputClawOpenPosition = 0.50;
+    public static double deltaLeftPosition;
+    public static double deltaRightPosition;
 
     Gamepad gamepad1prev = new Gamepad();
     Gamepad gamepad2prev = new Gamepad();
 
     SlidesPID slidesPidExtendo;
-    /*SlidesPID slidesPidRight;
-    SlidesPID slidesPidLeft;*/
+    SlidesPID slidesPidVertical;
+
 
     boolean extendoSlidesPressed = true;
-
+    boolean verticalSlidesPressed = true;
+    boolean intakeClawClosed;
+    boolean outputClawClosed;
+    boolean outputScorePos = false;
 
     @Override
     public void init(){
@@ -71,41 +93,66 @@ public class intothedeep_tele extends OpMode{
         dashboard = FtcDashboard.getInstance();
         packet = new TelemetryPacket();
         slidesPidExtendo = new SlidesPID();
-        /*slidesPidLeft = new SlidesPID();
-        slidesPidRight = new SlidesPID();*/
+        slidesPidVertical = new SlidesPID();
 
         rf = hardwareMap.get(DcMotor.class, "motorRF");
         lf = hardwareMap.get(DcMotor.class, "motorLF");
         rb = hardwareMap.get(DcMotor.class, "motorRB");
         lb = hardwareMap.get(DcMotor.class, "motorLB");
-        /*rs = hardwareMap.get(DcMotor.class, "rs");
-        ls = hardwareMap.get(DcMotor.class, "ls");*/
-        extendo = hardwareMap.get(DcMotor.class, "extendo");
 
+        extendo = hardwareMap.get(DcMotor.class, "extendo");
+        ls = hardwareMap.get(DcMotor.class, "ls");
+        rs = hardwareMap.get(DcMotor.class, "rs");
+        ms = hardwareMap.get(DcMotor.class, "ms");
+
+        ls.setDirection(DcMotorSimple.Direction.REVERSE);
+        rs.setDirection(DcMotorSimple.Direction.REVERSE);
 
         alpha = hardwareMap.get(Servo.class, "alpha");
         beta = hardwareMap.get(Servo.class, "beta");
-        //wrist = hardwareMap.get(Servo.class, "wrist");
+        intakeClaw = hardwareMap.get(Servo.class, "intakeClaw");
+        outputClaw = hardwareMap.get(Servo.class, "outputClaw");
+        deltaRight = hardwareMap.get(Servo.class, "deltaRight");
+        deltaLeft = hardwareMap.get(Servo.class, "deltaLeft");
+        outputWrist = hardwareMap.get(Servo.class, "outputWrist");
 
         rf.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         lf.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         rb.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         lb.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         extendo.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        ls.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        ms.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        rs.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
 
         extendoSlidesLimit = hardwareMap.get(TouchSensor.class, "extendoSlidesLimit");
+       // verticalSlidesLimit = hardwareMap.get(TouchSensor.class, "verticalSlidesLimit");
+        outputClaw.setDirection(Servo.Direction.REVERSE);
+
+        intakeClawClosed = false;
+
+        outputClawClosed = false;
+        outputClaw.setPosition(outputClawOpenPosition);
+
+        deltaLeft.setDirection(Servo.Direction.REVERSE);
+        deltaLeft.setDirection(Servo.Direction.REVERSE);
+
+        outputWrist.setPosition(1.0);
+        intakeClaw.setPosition(0.70);
+
+        slidePositionTargetEx = 0.0;
     }
 
     //@Override
     public void start(){
         extendo.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-       /* rs.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        ls.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);*/
+        rs.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        ls.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        ms.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
     }
 
     @Override
     final public void loop(){
-
         timeGap = timer.milliseconds();
         timer.reset();
 
@@ -120,40 +167,169 @@ public class intothedeep_tele extends OpMode{
             loopCumulativeTime = 0.0;
         }
 
-        //extendo
-        if (Math.abs(gamepad2.left_stick_y) > 0.01) {
-            slidePositionTarget -= slideTargetGain * gamepad2.left_stick_y;
+        //extendo (analog)
+       /* if (Math.abs(gamepad2.left_stick_y) > 0.01) {
+            slidePositionTargetEx -= slideTargetGainEx * gamepad2.left_stick_y;
+        }*/
+
+        if(gamepad2.dpad_up){
+            slidePositionTargetEx = slideMaxEx;
         }
 
-        if (slidePositionTarget < slideMin) {
-            slidePositionTarget = slideMin;
-        }
-        if (slidePositionTarget > slideMax) {
-            slidePositionTarget = slideMax;
+        if(gamepad2.dpad_down){
+            slidePositionTargetEx = slideMin;
         }
 
-        extendo.setPower(slidesPidExtendo.calculatePower(slidePositionTarget));
-        slidesPidExtendo.update(extendo.getCurrentPosition(), timeGap);
+        if (slidePositionTargetEx < slideMin) {
+            slidePositionTargetEx = slideMin;
+        }
+        if (slidePositionTargetEx > slideMaxEx) {
+            slidePositionTargetEx = slideMaxEx;
+        }
+
+        extendo.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        extendo.setPower(1.5 * slidesPidExtendo.calculatePowerExtendo(slidePositionTargetEx));
+        slidesPidExtendo.updateEx(extendo.getCurrentPosition(), timeGap);
 
         if (extendoSlidesLimit.isPressed()) {
             if (!extendoSlidesPressed) {
                 extendo.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+                slidePositionTargetEx = 0.0;
             }
             extendoSlidesPressed = true;
         } else {
             extendoSlidesPressed = false;
         }
 
-        //intake
-       if(Math.abs(gamepad2.right_stick_y) > 0.01 || Math.abs(gamepad2.right_stick_x) > 0.01){
-            alpha.setPosition((-gamepad2.right_stick_y + 1)/2);
-            beta.setPosition((gamepad2.right_stick_y + 1)/2);
+        //vertical
+       if(Math.abs(gamepad2.left_stick_y) > 0.01){
+            slidePositionTargetVe -= slideTargetGainVe * gamepad2.left_stick_y;
+        }
 
-//           alpha.setPosition(gamepad2.right_stick_x/2 + 0.5);
-//           beta.setPosition(gamepad2.right_stick_y/2 + 0.5);
+        rs.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        ls.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        ms.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        verticalPower = slidesPidVertical.calculatePowerVertical(slidePositionTargetVe);
+        ls.setPower(verticalPower);
+        ms.setPower(verticalPower);
+        rs.setPower(verticalPower);
+        slidesPidVertical.updateVe((ls.getCurrentPosition() + rs.getCurrentPosition() + ms.getCurrentPosition())/3, timeGap);
+
+        /*if (verticalSlidesLimit.isPressed()) {
+            if (!verticalSlidesPressed) {
+                extendo.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+            }
+            extendoSlidesPressed = true;
+        } else {
+            extendoSlidesPressed = false;
+        }*/
+
+        //intake
+       if(Math.abs(gamepad2.right_stick_y) > 0.01 || Math.abs(gamepad2.right_stick_x) > 0.01) {
+            alpha.setPosition((gamepad2.right_stick_x - gamepad2.right_stick_y)/4.0 + 0.5);
+            beta.setPosition((gamepad2.right_stick_x + gamepad2.right_stick_y)/4.0 + 0.5);
+       }
+
+        /*if(!gamepad2prev.a && gamepad2.a){
+            if(intakeClawClosed){
+                intakeClaw.setPosition(0.97);
+                intakeClawClosed = false;
+            }
+            else{
+                intakeClaw.setPosition(0.70);
+                intakeClawClosed = true;
+            }
+        }
+
+        if(gamepad2.dpad_up){
+            alphaPos += 0.01;
+            if(alphaPos > 1.0){
+                alphaPos = 1.0;
+            }
+        }
+
+        if(gamepad2.dpad_down){
+            alphaPos -= 0.01;
+            if(alphaPos< 0.0){
+                alphaPos = 0.0;
+            }
+        }
+
+        if(gamepad2.dpad_right){
+            betaPos += 0.01;
+            if(betaPos > 1.0){
+                betaPos = 1.0;
+            }
+        }
+
+        if(gamepad2.dpad_left){
+            betaPos -= 0.01;
+            if(betaPos< 0.0){
+                betaPos = 0.0;
+            }
+        }
+
+        alpha.setPosition(alphaPos);
+        beta.setPosition(betaPos);*/
+
+        //output
+        if(!gamepad1prev.b && gamepad1.b){
+            deltaLeft.setPosition(0.36);
+            deltaRight.setPosition(0.23);
+            outputWrist.setPosition(1.0);
+        }
+
+        if(!gamepad1prev.y && gamepad1.y){
+            deltaLeft.setPosition(0.21);
+            deltaRight.setPosition(0.10);
+            outputWrist.setPosition(0.0);
+        }
+
+        if(!gamepad1prev.x && gamepad1.x){
+            deltaLeft.setPosition(0.08);
+            deltaRight.setPosition(0.28);
+            outputWrist.setPosition(0.0);
+        }
+
+        if(!gamepad1prev.a && gamepad1.a){
+            if(outputClawClosed){
+                outputClaw.setPosition(outputClawOpenPosition);
+                outputClawClosed = false;
+            }
+            else{
+                outputClaw.setPosition(outputClawClosedPosition);
+                outputClawClosed = true;
+            }
         }
 
 
+        /*if(gamepad2.dpad_up){
+            deltaLeftPosition += 0.01;
+            if(deltaLeftPosition > 1.0){
+                deltaLeftPosition = 1.0;
+            }
+        }
+
+        if(gamepad2.dpad_down){
+            deltaLeftPosition -= 0.01;
+            if(deltaLeftPosition < 0.0){
+                deltaLeftPosition = 0.0;
+            }
+        }
+
+        if(gamepad2.dpad_right){
+            deltaRightPosition += 0.01;
+            if(deltaRightPosition > 1.0){
+                deltaRightPosition = 1.0;
+            }
+        }
+
+        if(gamepad2.dpad_left){
+            deltaRightPosition -= 0.01;
+            if(deltaRightPosition < 0.0){
+                deltaRightPosition = 0.0;
+            }
+        }*/
 
 
 
@@ -179,26 +355,48 @@ public class intothedeep_tele extends OpMode{
         rb.setPower(preRB/max);
         lb.setPower(preLB/max);
 
+        gamepad1prev.copy(gamepad1);
+        gamepad2prev.copy(gamepad2);
 
-        /*telemetry.addData("rs position", rs.getCurrentPosition());
-        telemetry.addData("ls position", ls.getCurrentPosition());*/
+        telemetry.addData("alpha servo position", "alpha servo posotion: " + alpha.getPosition());
+        telemetry.addData("beta servo position", "beta servo position: " + beta.getPosition());
+
+        telemetry.addData("intakeClawPos", "intake claw position: " + intakeClaw.getPosition());
+        telemetry.addData("outputWristPos", "output wrist position: " + outputWrist.getPosition());
+        telemetry.addData("deltaLeft", "deltaLeft position: " + deltaLeft.getPosition());
+        telemetry.addData("deltaRight", "deltaRight position: " + deltaRight.getPosition());
+
+        telemetry.addData("rs position", "rs position: " + rs.getCurrentPosition());
+        telemetry.addData("ls position", "ls position: " + ls.getCurrentPosition());
+        telemetry.addData("ms position", "ms position: " + ms.getCurrentPosition());
+        telemetry.addData("rs power", "rs power: " + rs.getPower());
+        telemetry.addData("ls power", "ls power: " + ls.getPower());
+        telemetry.addData("ms power", "ms power: " + ms.getPower());
+        telemetry.addData("Error Vertical", "Error vertical: " + (slidePositionTargetVe - (ls.getCurrentPosition() + rs.getCurrentPosition() + ms.getCurrentPosition())/3));
+
+        telemetry.addData("Error Extendo", "Error Extendo: " + (slidePositionTargetEx - extendo.getCurrentPosition()));
         telemetry.addData("extendo position", "extendo position: " + extendo.getCurrentPosition());
         telemetry.addData("extendo power", "extendo power: " + extendo.getPower());
+        telemetry.addData("extendo slides pressed", "extendo slides pressed: " + extendoSlidesPressed);
+
         telemetry.addData("time per loop", timePerLoop);
         telemetry.addData("gampead 2 left stick analog value", "gamepad 2 left stick analog value: " + gamepad2.left_stick_y);
         telemetry.addData("gampead 2 right stick analog value", "gamepad 2 right stick analog value: " + gamepad2.right_stick_y);
-        telemetry.addData("Error Extendo", "Error Extendo: " + (slidePositionTarget - extendo.getCurrentPosition()));
-        telemetry.addData("extendo slides pressed", "extendo slides pressed: " + extendoSlidesPressed);
-        telemetry.addData("alpha servo position", "alpha servo posotion: " + alpha.getPosition());
-        telemetry.addData("beta servo position", "beta servo position: " + beta.getPosition());
         telemetry.update();
 
-        packet.put("slides target", slidePositionTarget);
+        packet.put("slides target extendo", slidePositionTargetEx);
         packet.put("slides position extendo", extendo.getCurrentPosition());
         packet.put("slides power extendo", extendo.getPower());
-        packet.put("extendo kp", "extendo kp" + SlidesPID.Kp);
-        packet.put("extendo kd", "extendo kd" + SlidesPID.Kd);
-        packet.put("extendo ki", "extendo ki" + SlidesPID.Ki);
+        packet.put("extendo kp", "extendo kp" + SlidesPID.KpEx);
+        packet.put("extendo kd", "extendo kd" + SlidesPID.KdEx);
+        packet.put("extendo ki", "extendo ki" + SlidesPID.KiEx);
+
+        packet.put("slides target vertical", slidePositionTargetVe);
+        packet.put("slides position vertical", ((ls.getCurrentPosition()) + ms.getCurrentPosition() + rs.getCurrentPosition())/3);
+        packet.put("slides power extendo", ls.getPower());
+        packet.put("vertical kp", "extendo kp" + SlidesPID.KpVe);
+        packet.put("vertical kd", "extendo kd" + SlidesPID.KdVe);
+        packet.put("vertical ki", "extendo ki" + SlidesPID.KiVe);
         dashboard.sendTelemetryPacket(packet);
     }
 
