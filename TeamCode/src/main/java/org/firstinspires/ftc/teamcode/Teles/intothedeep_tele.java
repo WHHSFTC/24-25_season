@@ -172,6 +172,7 @@ public class intothedeep_tele extends OpMode{
             slidePositionTargetEx -= slideTargetGainEx * gamepad2.left_stick_y;
         }*/
 
+        //extendo digital
         if(gamepad2.dpad_up){
             slidePositionTargetEx = slideMaxEx;
         }
@@ -230,7 +231,7 @@ public class intothedeep_tele extends OpMode{
             beta.setPosition((gamepad2.right_stick_x + gamepad2.right_stick_y)/4.0 + 0.5);
        }
 
-        /*if(!gamepad2prev.a && gamepad2.a){
+        if(!gamepad2prev.a && gamepad2.a){
             if(intakeClawClosed){
                 intakeClaw.setPosition(0.97);
                 intakeClawClosed = false;
@@ -240,37 +241,6 @@ public class intothedeep_tele extends OpMode{
                 intakeClawClosed = true;
             }
         }
-
-        if(gamepad2.dpad_up){
-            alphaPos += 0.01;
-            if(alphaPos > 1.0){
-                alphaPos = 1.0;
-            }
-        }
-
-        if(gamepad2.dpad_down){
-            alphaPos -= 0.01;
-            if(alphaPos< 0.0){
-                alphaPos = 0.0;
-            }
-        }
-
-        if(gamepad2.dpad_right){
-            betaPos += 0.01;
-            if(betaPos > 1.0){
-                betaPos = 1.0;
-            }
-        }
-
-        if(gamepad2.dpad_left){
-            betaPos -= 0.01;
-            if(betaPos< 0.0){
-                betaPos = 0.0;
-            }
-        }
-
-        alpha.setPosition(alphaPos);
-        beta.setPosition(betaPos);*/
 
         //output
         if(!gamepad1prev.b && gamepad1.b){
