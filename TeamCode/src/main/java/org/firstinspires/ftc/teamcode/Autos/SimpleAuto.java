@@ -3,7 +3,7 @@ package org.firstinspires.ftc.teamcode.Autos;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
-
+ //
 @Autonomous
 public class SimpleAuto extends LinearOpMode {
     DcMotor rf;
