@@ -41,10 +41,14 @@ public class intothedeep_tele extends OpMode{
     DcMotor ms;
 
     TouchSensor extendoSlidesLimit;
-    //TouchSensor verticalSlidesLimit;
+    TouchSensor verticalSlidesLimit;
+    DistanceSensor leftDS;
+    DistanceSensor rightDS;
+
     Servo alpha;
     Servo beta;
     Servo intakeClaw;
+    Servo intakeWrist;
     Servo outputClaw;
     Servo deltaRight;
     Servo deltaLeft;
@@ -57,22 +61,31 @@ public class intothedeep_tele extends OpMode{
     double timeGap;
     double loopCumulativeTime = 0.0;
     double loopCounter = 0.0;
+    double alphaPos;
+    double betaPos;
+    double prevAlphaPos;
+    double prevBetaPos;
+    public static double lerpProportion = 0.1;
 
+    double rdsReading;
+    double ldsReading;
 
     double verticalPower = 0.0;
-    public static double slideTargetGainEx = 50.0;
-    public static double slideTargetGainVe = 80.0;
+    public static double slideTargetGainEx = 70.0;
+    public static double slideTargetGainVe = 110.0;
     public static double slideMin = 0.0;
     public static double slideMaxEx = 450.0;
-    public static double slideMaxVe = 0.0;
+    public static double slideMaxVe = 1000.0;
+    public static double slideSpecimenVe = 530.0;
     public static double slidePositionTargetEx;
     public static double slidePositionTargetVe;
 
 
     public static double outputClawClosedPosition = 0.30;
     public static double outputClawOpenPosition = 0.50;
-    public static double deltaLeftPosition;
-    public static double deltaRightPosition;
+    public static double deltaLeftPosition = 0.5;
+    public static double deltaRightPosition = 0.5;
+    public static double intakeWristPos = 0.5;
 
     Gamepad gamepad1prev = new Gamepad();
     Gamepad gamepad2prev = new Gamepad();
@@ -80,12 +93,11 @@ public class intothedeep_tele extends OpMode{
     SlidesPID slidesPidExtendo;
     SlidesPID slidesPidVertical;
 
-
     boolean extendoSlidesPressed = true;
     boolean verticalSlidesPressed = true;
     boolean intakeClawClosed;
     boolean outputClawClosed;
-    boolean outputScorePos = false;
+    boolean outputWristSwitch;
 
     @Override
     public void init(){
@@ -111,6 +123,7 @@ public class intothedeep_tele extends OpMode{
         alpha = hardwareMap.get(Servo.class, "alpha");
         beta = hardwareMap.get(Servo.class, "beta");
         intakeClaw = hardwareMap.get(Servo.class, "intakeClaw");
+        intakeWrist = hardwareMap.get(Servo.class, "intakeWrist");
         outputClaw = hardwareMap.get(Servo.class, "outputClaw");
         deltaRight = hardwareMap.get(Servo.class, "deltaRight");
         deltaLeft = hardwareMap.get(Servo.class, "deltaLeft");
@@ -126,21 +139,29 @@ public class intothedeep_tele extends OpMode{
         rs.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
 
         extendoSlidesLimit = hardwareMap.get(TouchSensor.class, "extendoSlidesLimit");
-       // verticalSlidesLimit = hardwareMap.get(TouchSensor.class, "verticalSlidesLimit");
-        outputClaw.setDirection(Servo.Direction.REVERSE);
+        verticalSlidesLimit = hardwareMap.get(TouchSensor.class, "verticalSlidesLimit");
+        leftDS = hardwareMap.get(DistanceSensor.class, "leftDS");
+        rightDS = hardwareMap.get(DistanceSensor.class, "rightDS");
 
         intakeClawClosed = false;
-
         outputClawClosed = false;
-        outputClaw.setPosition(outputClawOpenPosition);
+        outputWristSwitch = false;
 
         deltaLeft.setDirection(Servo.Direction.REVERSE);
         deltaLeft.setDirection(Servo.Direction.REVERSE);
-
-        outputWrist.setPosition(1.0);
-        intakeClaw.setPosition(0.70);
+        outputClaw.setDirection(Servo.Direction.REVERSE);
 
         slidePositionTargetEx = 0.0;
+        slidePositionTargetVe = 0.0;
+
+        deltaLeft.setPosition(0.73);
+        deltaRight.setPosition(0.97);
+        outputClaw.setPosition(outputClawOpenPosition);
+        outputWrist.setPosition(1.0);
+        intakeClaw.setPosition(0.70);
+        intakeWrist.setPosition(0.59); //fully straight on
+        alpha.setPosition(0.45);
+        beta.setPosition(0.56);
     }
 
     //@Override
@@ -167,17 +188,24 @@ public class intothedeep_tele extends OpMode{
             loopCumulativeTime = 0.0;
         }
 
-        //extendo (analog)
-       /* if (Math.abs(gamepad2.left_stick_y) > 0.01) {
-            slidePositionTargetEx -= slideTargetGainEx * gamepad2.left_stick_y;
-        }*/
+        rdsReading = rightDS.getDistance(DistanceUnit.MM);
+        ldsReading = leftDS.getDistance(DistanceUnit.MM);
 
-        //extendo digital
-        if(gamepad2.dpad_up){
-            slidePositionTargetEx = slideMaxEx;
+        //extendo (analog)
+        if (Math.abs(gamepad2.left_stick_y) > 0.01) {
+            slidePositionTargetEx -= slideTargetGainEx * gamepad2.left_stick_y;
         }
 
-        if(gamepad2.dpad_down){
+        //extendo digital
+        /*if(gamepad2.dpad_up){ //extendo max
+            slidePositionTargetEx = slideMaxEx;
+        }*/
+
+        extendo.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        extendo.setPower(1.5*slidesPidExtendo.calculatePowerExtendo(slidePositionTargetEx));
+        slidesPidExtendo.updateEx(extendo.getCurrentPosition(), timeGap);
+
+        if(gamepad2.dpad_down){ //extendo zero
             slidePositionTargetEx = slideMin;
         }
 
@@ -188,80 +216,145 @@ public class intothedeep_tele extends OpMode{
             slidePositionTargetEx = slideMaxEx;
         }
 
-        extendo.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        extendo.setPower(1.5 * slidesPidExtendo.calculatePowerExtendo(slidePositionTargetEx));
-        slidesPidExtendo.updateEx(extendo.getCurrentPosition(), timeGap);
-
-        if (extendoSlidesLimit.isPressed()) {
+        if (extendoSlidesLimit.isPressed()) { //extendo limit switch
             if (!extendoSlidesPressed) {
                 extendo.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-                slidePositionTargetEx = 0.0;
             }
             extendoSlidesPressed = true;
         } else {
             extendoSlidesPressed = false;
         }
 
-        //vertical
-       if(Math.abs(gamepad2.left_stick_y) > 0.01){
-            slidePositionTargetVe -= slideTargetGainVe * gamepad2.left_stick_y;
+        //intake wrist
+        if(gamepad2.left_trigger > 0.0){
+            intakeWrist.setPosition(0.59 + gamepad2.left_trigger * 0.20);
+        }
+
+        if(gamepad2.right_trigger > 0.0){
+            intakeWrist.setPosition(0.59 - gamepad2.right_trigger * 0.20);
+        }
+
+        //transfer position intake
+        if(!gamepad2prev.y && gamepad2.y && extendoSlidesPressed){
+            alpha.setPosition(0.75);
+            beta.setPosition(0.25);
+        }
+
+        //vertical analog
+        /*if(Math.abs(gamepad2.left_stick_y) > 0.01){
+            //slidePositionTargetVe -= slideTargetGainVe * gamepad2.left_stick_y;
+            if(gamepad2.left_stick_y > 0.60){
+                ls.setPower(-1.0);
+                ms.setPower(-1.0);
+                rs.setPower(-1.0);
+                slidePositionTargetVe = slideMin;
+            }
+            else if(gamepad2.left_stick_y < -0.60){
+                ls.setPower(1.0);
+                rs.setPower(1.0);
+                ms.setPower(1.0);
+                slidePositionTargetVe = slideMaxVe;
+            }
+        }*/
+
+        //vertical digital
+        if(gamepad1.dpad_up){ //vertical slides max
+            slidePositionTargetVe = slideMaxVe;
+        }
+
+        if(gamepad1.dpad_down){ //zero vertical slides
+            slidePositionTargetVe = slideMin;
+        }
+
+        if(gamepad1.dpad_right){ //specimen height
+            slidePositionTargetVe = slideSpecimenVe;
         }
 
         rs.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         ls.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         ms.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        verticalPower = slidesPidVertical.calculatePowerVertical(slidePositionTargetVe);
+        verticalPower = 1.5*slidesPidVertical.calculatePowerVertical(slidePositionTargetVe);
         ls.setPower(verticalPower);
         ms.setPower(verticalPower);
         rs.setPower(verticalPower);
         slidesPidVertical.updateVe((ls.getCurrentPosition() + rs.getCurrentPosition() + ms.getCurrentPosition())/3, timeGap);
 
-        /*if (verticalSlidesLimit.isPressed()) {
+        if (slidePositionTargetVe < slideMin) {
+            slidePositionTargetVe = slideMin;
+        }
+        if (slidePositionTargetVe > slideMaxVe) {
+            slidePositionTargetVe = slideMaxVe;
+        }
+
+
+        if (verticalSlidesLimit.isPressed()) { //vertical slides limit switch
             if (!verticalSlidesPressed) {
-                extendo.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+                ms.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+                ls.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+                rs.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
             }
-            extendoSlidesPressed = true;
+            verticalSlidesPressed = true;
         } else {
-            extendoSlidesPressed = false;
-        }*/
+            verticalSlidesPressed = false;
+        }
 
         //intake
-       if(Math.abs(gamepad2.right_stick_y) > 0.01 || Math.abs(gamepad2.right_stick_x) > 0.01) {
-            alpha.setPosition((gamepad2.right_stick_x - gamepad2.right_stick_y)/4.0 + 0.5);
-            beta.setPosition((gamepad2.right_stick_x + gamepad2.right_stick_y)/4.0 + 0.5);
-       }
+        if(Math.abs(gamepad2.right_stick_y) > 0.01 || Math.abs(gamepad2.right_stick_x) > 0.01) { //intake differential
+            alphaPos = ((gamepad2.right_stick_x - Math.min(gamepad2.right_stick_y, 0.5))/4.0 + 0.5);
+            betaPos = ((gamepad2.right_stick_x + Math.min(gamepad2.right_stick_y, 0.5))/4.0 + 0.5);
 
-        if(!gamepad2prev.a && gamepad2.a){
+            alpha.setPosition(lerpProportion * alphaPos + (1-lerpProportion)*prevAlphaPos);
+            beta.setPosition(lerpProportion * betaPos + (1-lerpProportion)*prevBetaPos);
+
+            prevAlphaPos = alpha.getPosition();
+            prevBetaPos = beta.getPosition();
+        }
+
+        if(!gamepad2prev.a && gamepad2.a){  //intake claw
             if(intakeClawClosed){
-                intakeClaw.setPosition(0.97);
+                intakeClaw.setPosition(0.70);
                 intakeClawClosed = false;
             }
             else{
-                intakeClaw.setPosition(0.70);
+                intakeClaw.setPosition(0.97);
                 intakeClawClosed = true;
             }
         }
 
         //output
-        if(!gamepad1prev.b && gamepad1.b){
-            deltaLeft.setPosition(0.36);
-            deltaRight.setPosition(0.23);
+        if(!gamepad1prev.b && gamepad1.b){  //transfer
+            deltaLeft.setPosition(0.73);
+            deltaRight.setPosition(0.97);
             outputWrist.setPosition(1.0);
+            outputWristSwitch = false;
         }
 
-        if(!gamepad1prev.y && gamepad1.y){
-            deltaLeft.setPosition(0.21);
-            deltaRight.setPosition(0.10);
+        if(!gamepad1prev.y && gamepad1.y){ //basket
+            deltaLeft.setPosition(0.60);
+            deltaRight.setPosition(0.85);
             outputWrist.setPosition(0.0);
+            outputWristSwitch = true;
         }
 
-        if(!gamepad1prev.x && gamepad1.x){
-            deltaLeft.setPosition(0.08);
-            deltaRight.setPosition(0.28);
-            outputWrist.setPosition(0.0);
+        if(!gamepad1prev.x && gamepad1.x){  //specimen
+            deltaLeft.setPosition(0.43);
+            deltaRight.setPosition(0.99);
+            outputWrist.setPosition(0.5);
+            outputWristSwitch = false;
         }
 
-        if(!gamepad1prev.a && gamepad1.a){
+        if(!gamepad1prev.right_bumper && gamepad1.right_bumper){  //output wrist
+            if(outputWristSwitch){
+                outputWrist.setPosition(1.0); //non switch
+                outputWristSwitch = false;
+            }
+            else{
+                outputWrist.setPosition(0.0); //switch
+                outputWristSwitch = true;
+            }
+        }
+
+        if(!gamepad1prev.a && gamepad1.a){  //output claw
             if(outputClawClosed){
                 outputClaw.setPosition(outputClawOpenPosition);
                 outputClawClosed = false;
@@ -272,36 +365,52 @@ public class intothedeep_tele extends OpMode{
             }
         }
 
-
-        /*if(gamepad2.dpad_up){
+        /*if(gamepad1.dpad_up){
             deltaLeftPosition += 0.01;
             if(deltaLeftPosition > 1.0){
                 deltaLeftPosition = 1.0;
             }
         }
 
-        if(gamepad2.dpad_down){
+        if(gamepad1.dpad_down){
             deltaLeftPosition -= 0.01;
             if(deltaLeftPosition < 0.0){
                 deltaLeftPosition = 0.0;
             }
         }
 
-        if(gamepad2.dpad_right){
+        if(gamepad1.dpad_right){
             deltaRightPosition += 0.01;
             if(deltaRightPosition > 1.0){
                 deltaRightPosition = 1.0;
             }
         }
 
-        if(gamepad2.dpad_left){
+        if(gamepad1.dpad_left){
             deltaRightPosition -= 0.01;
             if(deltaRightPosition < 0.0){
                 deltaRightPosition = 0.0;
             }
-        }*/
+        }
 
+        deltaLeft.setPosition(deltaLeftPosition);
+        deltaRight.setPosition(deltaRightPosition);*/
 
+        /*if(gamepad2.dpad_right){
+            intakeWristPos += 0.01;
+            if(intakeWristPos > 1.0){
+                intakeWristPos = 1.0;
+            }
+        }
+
+        if(gamepad2.dpad_left){
+            intakeWristPos -= 0.01;
+            if(intakeWristPos < 0.0){
+                intakeWristPos = 0.0;
+            }
+        }
+
+        intakeWrist.setPosition(intakeWristPos);*/
 
         //drivetrain
         double y = -gamepad1.left_stick_x; //verticals
@@ -328,8 +437,15 @@ public class intothedeep_tele extends OpMode{
         gamepad1prev.copy(gamepad1);
         gamepad2prev.copy(gamepad2);
 
+        telemetry.addData("gamepad 2 right trigger", "gamepad 2 right trigger: " + gamepad2.right_trigger);
+        telemetry.addData("gamepad 2 left trigger", "gamepad 2 left trigger: " + gamepad2.left_trigger);
+        telemetry.addData("intakeWrist position", "intake wrist position: " + intakeWrist.getPosition());
+
         telemetry.addData("alpha servo position", "alpha servo posotion: " + alpha.getPosition());
         telemetry.addData("beta servo position", "beta servo position: " + beta.getPosition());
+
+        telemetry.addData("right DS reading", "rightDS reading: " + rdsReading);
+        telemetry.addData("left DS reading", "leftDS reading: " + ldsReading);
 
         telemetry.addData("intakeClawPos", "intake claw position: " + intakeClaw.getPosition());
         telemetry.addData("outputWristPos", "output wrist position: " + outputWrist.getPosition());
