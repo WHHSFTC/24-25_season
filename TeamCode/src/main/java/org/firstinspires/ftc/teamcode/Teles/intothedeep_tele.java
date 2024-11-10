@@ -65,7 +65,7 @@ public class intothedeep_tele extends OpMode{
     double betaPos;
     double prevAlphaPos;
     double prevBetaPos;
-    public static double lerpProportion = 0.1;
+    public static double lerpProportion = 0.60;
 
     double rdsReading;
     double ldsReading;
@@ -75,10 +75,11 @@ public class intothedeep_tele extends OpMode{
     public static double slideTargetGainVe = 110.0;
     public static double slideMin = 0.0;
     public static double slideMaxEx = 450.0;
-    public static double slideMaxVe = 1000.0;
+    public static double slideMaxVe = 1100.0;
     public static double slideSpecimenVe = 530.0;
     public static double slidePositionTargetEx;
     public static double slidePositionTargetVe;
+    public static double variable = 0.0;
 
 
     public static double outputClawClosedPosition = 0.30;
@@ -86,6 +87,7 @@ public class intothedeep_tele extends OpMode{
     public static double deltaLeftPosition = 0.5;
     public static double deltaRightPosition = 0.5;
     public static double intakeWristPos = 0.5;
+    public static double intakeClawPos;
 
     Gamepad gamepad1prev = new Gamepad();
     Gamepad gamepad2prev = new Gamepad();
@@ -158,10 +160,10 @@ public class intothedeep_tele extends OpMode{
         deltaRight.setPosition(0.97);
         outputClaw.setPosition(outputClawOpenPosition);
         outputWrist.setPosition(1.0);
-        intakeClaw.setPosition(0.70);
-        intakeWrist.setPosition(0.59); //fully straight on
-        alpha.setPosition(0.45);
-        beta.setPosition(0.56);
+        intakeClaw.setPosition(0.63);
+        intakeWrist.setPosition(0.50); //fully straight on
+        alpha.setPosition(0.76);
+        beta.setPosition(0.24);
     }
 
     //@Override
@@ -202,7 +204,7 @@ public class intothedeep_tele extends OpMode{
         }*/
 
         extendo.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        extendo.setPower(1.5*slidesPidExtendo.calculatePowerExtendo(slidePositionTargetEx));
+        extendo.setPower(1.3*slidesPidExtendo.calculatePowerExtendo(slidePositionTargetEx));
         slidesPidExtendo.updateEx(extendo.getCurrentPosition(), timeGap);
 
         if(gamepad2.dpad_down){ //extendo zero
@@ -227,17 +229,29 @@ public class intothedeep_tele extends OpMode{
 
         //intake wrist
         if(gamepad2.left_trigger > 0.0){
-            intakeWrist.setPosition(0.59 + gamepad2.left_trigger * 0.20);
+            intakeWristPos -= 0.04;
+            if(intakeWristPos < 0.02){
+                intakeWristPos = 0.02;
+            }
+            intakeWrist.setPosition(intakeWristPos);
         }
 
         if(gamepad2.right_trigger > 0.0){
-            intakeWrist.setPosition(0.59 - gamepad2.right_trigger * 0.20);
+            intakeWristPos += 0.04;
+            if(intakeWristPos > 0.68){
+                intakeWristPos = 0.68;
+            }
+            intakeWrist.setPosition(intakeWristPos);
+        }
+
+        if(!gamepad2prev.x && gamepad2.x){
+            intakeWrist.setPosition(0.50);
         }
 
         //transfer position intake
-        if(!gamepad2prev.y && gamepad2.y && extendoSlidesPressed){
-            alpha.setPosition(0.75);
-            beta.setPosition(0.25);
+        if(!gamepad2prev.y && gamepad2.y){
+            alpha.setPosition(0.76);
+            beta.setPosition(0.24);
         }
 
         //vertical analog
@@ -273,7 +287,7 @@ public class intothedeep_tele extends OpMode{
         rs.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         ls.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         ms.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        verticalPower = 1.5*slidesPidVertical.calculatePowerVertical(slidePositionTargetVe);
+        verticalPower = 1.9*slidesPidVertical.calculatePowerVertical(slidePositionTargetVe);
         ls.setPower(verticalPower);
         ms.setPower(verticalPower);
         rs.setPower(verticalPower);
@@ -300,8 +314,8 @@ public class intothedeep_tele extends OpMode{
 
         //intake
         if(Math.abs(gamepad2.right_stick_y) > 0.01 || Math.abs(gamepad2.right_stick_x) > 0.01) { //intake differential
-            alphaPos = ((gamepad2.right_stick_x - Math.min(gamepad2.right_stick_y, 0.5))/4.0 + 0.5);
-            betaPos = ((gamepad2.right_stick_x + Math.min(gamepad2.right_stick_y, 0.5))/4.0 + 0.5);
+            alphaPos = ((gamepad2.right_stick_x - Math.min(gamepad2.right_stick_y, 0.9))/4.0 + 0.5);
+            betaPos = ((gamepad2.right_stick_x + Math.min(gamepad2.right_stick_y, 0.9))/4.0 + 0.5);
 
             alpha.setPosition(lerpProportion * alphaPos + (1-lerpProportion)*prevAlphaPos);
             beta.setPosition(lerpProportion * betaPos + (1-lerpProportion)*prevBetaPos);
@@ -312,11 +326,11 @@ public class intothedeep_tele extends OpMode{
 
         if(!gamepad2prev.a && gamepad2.a){  //intake claw
             if(intakeClawClosed){
-                intakeClaw.setPosition(0.70);
+                intakeClaw.setPosition(0.63);
                 intakeClawClosed = false;
             }
             else{
-                intakeClaw.setPosition(0.97);
+                intakeClaw.setPosition(0.92);
                 intakeClawClosed = true;
             }
         }
@@ -327,6 +341,8 @@ public class intothedeep_tele extends OpMode{
             deltaRight.setPosition(0.97);
             outputWrist.setPosition(1.0);
             outputWristSwitch = false;
+            outputClaw.setPosition(outputClawOpenPosition);
+            outputClawClosed = false;
         }
 
         if(!gamepad1prev.y && gamepad1.y){ //basket
@@ -343,6 +359,17 @@ public class intothedeep_tele extends OpMode{
             outputWristSwitch = false;
         }
 
+        if(!gamepad1prev.a && gamepad1.a){  //output claw
+            if(outputClawClosed){
+                outputClaw.setPosition(outputClawOpenPosition);
+                outputClawClosed = false;
+            }
+            else{
+                outputClaw.setPosition(outputClawClosedPosition);
+                outputClawClosed = true;
+            }
+        }
+
         if(!gamepad1prev.right_bumper && gamepad1.right_bumper){  //output wrist
             if(outputWristSwitch){
                 outputWrist.setPosition(1.0); //non switch
@@ -354,15 +381,11 @@ public class intothedeep_tele extends OpMode{
             }
         }
 
-        if(!gamepad1prev.a && gamepad1.a){  //output claw
-            if(outputClawClosed){
-                outputClaw.setPosition(outputClawOpenPosition);
-                outputClawClosed = false;
-            }
-            else{
-                outputClaw.setPosition(outputClawClosedPosition);
-                outputClawClosed = true;
-            }
+        if(!gamepad1prev.dpad_left && gamepad1.dpad_left){  //transfer between claws
+           // deltaLeft.setPosition(0.70);
+            //deltaLeft.setPosition(0.94);
+            outputClaw.setPosition(outputClawOpenPosition);
+            outputClawClosed = false;
         }
 
         /*if(gamepad1.dpad_up){
@@ -410,7 +433,24 @@ public class intothedeep_tele extends OpMode{
             }
         }
 
+
         intakeWrist.setPosition(intakeWristPos);*/
+
+        /*if(gamepad2.dpad_right){
+            intakeClawPos += 0.01;
+            if(intakeClawPos > 1){
+                intakeClawPos = 1;
+            }
+        }
+
+        if(gamepad2.dpad_left){
+            intakeClawPos -= 0.01;
+            if(intakeClawPos < 0){
+                intakeClawPos = 0.0;
+            }
+        }
+
+        intakeClaw.setPosition(intakeClawPos);*/
 
         //drivetrain
         double y = -gamepad1.left_stick_x; //verticals
@@ -419,7 +459,7 @@ public class intothedeep_tele extends OpMode{
         double scalar = 1.0;
 
         if(gamepad1.left_bumper){
-            scalar = 0.6;
+            scalar = 0.5;
         }
 
         double preRF = r*scalar + y*scalar + x*scalar;
