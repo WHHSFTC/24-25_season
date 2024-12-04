@@ -42,6 +42,7 @@ public class intothedeep_tele extends OpMode{
 
     TouchSensor extendoSlidesLimit;
     TouchSensor verticalSlidesLimit;
+    TouchSensor carabiner;
     DistanceSensor leftDS;
     DistanceSensor rightDS;
 
@@ -72,20 +73,20 @@ public class intothedeep_tele extends OpMode{
 
     double verticalPower = 0.0;
     public static double slideTargetGainEx = 70.0;
-    public static double slideTargetGainVe = 110.0;
+    public static double slideTargetGainVe = 50.0;
     public static double slideMin = 0.0;
     public static double slideMaxEx = 450.0;
-    public static double slideMaxVe = 1100.0;
-    public static double slideSpecimenVe = 530.0;
+    public static double slideMaxVe = 500.0;
+    public static double slideSpecimenVe = 250.0;
     public static double slidePositionTargetEx;
-    public static double slidePositionTargetVe;
+    public static double slidePositionTargetVe = 0.0;
     public static double variable = 0.0;
 
 
     public static double outputClawClosedPosition = 0.30;
     public static double outputClawOpenPosition = 0.50;
-    public static double deltaLeftPosition = 0.5;
-    public static double deltaRightPosition = 0.5;
+    public static double deltaLeftPosition = 0.73;
+    public static double deltaRightPosition = 0.97;
     public static double intakeWristPos = 0.5;
     public static double intakeClawPos;
 
@@ -97,6 +98,7 @@ public class intothedeep_tele extends OpMode{
 
     boolean extendoSlidesPressed = true;
     boolean verticalSlidesPressed = true;
+    boolean carabinerPressed = false;
     boolean intakeClawClosed;
     boolean outputClawClosed;
     boolean outputWristSwitch;
@@ -141,12 +143,12 @@ public class intothedeep_tele extends OpMode{
         rs.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
 
         extendoSlidesLimit = hardwareMap.get(TouchSensor.class, "extendoSlidesLimit");
-        verticalSlidesLimit = hardwareMap.get(TouchSensor.class, "verticalSlidesLimit");
-        leftDS = hardwareMap.get(DistanceSensor.class, "leftDS");
-        rightDS = hardwareMap.get(DistanceSensor.class, "rightDS");
+        //verticalSlidesLimit = hardwareMap.get(TouchSensor.class, "verticalSlidesLimit");
+        carabiner = hardwareMap.get(TouchSensor.class, "carabiner");
+        /*leftDS = hardwareMap.get(DistanceSensor.class, "leftDS");
+        rightDS = hardwareMap.get(DistanceSensor.class, "rightDS");*/
 
         intakeClawClosed = false;
-        outputClawClosed = false;
         outputWristSwitch = false;
 
         deltaLeft.setDirection(Servo.Direction.REVERSE);
@@ -156,14 +158,8 @@ public class intothedeep_tele extends OpMode{
         slidePositionTargetEx = 0.0;
         slidePositionTargetVe = 0.0;
 
-        deltaLeft.setPosition(0.73);
-        deltaRight.setPosition(0.97);
-        outputClaw.setPosition(outputClawOpenPosition);
-        outputWrist.setPosition(1.0);
-        intakeClaw.setPosition(0.63);
-        intakeWrist.setPosition(0.50); //fully straight on
-        alpha.setPosition(0.76);
-        beta.setPosition(0.24);
+        outputClaw.setPosition(outputClawClosedPosition);
+        outputClawClosed = true;
     }
 
     //@Override
@@ -172,6 +168,15 @@ public class intothedeep_tele extends OpMode{
         rs.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         ls.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         ms.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+
+        deltaLeft.setPosition(0.73);
+        deltaRight.setPosition(0.97);
+        outputClaw.setPosition(outputClawClosedPosition);
+        outputWrist.setPosition(1.0);
+        intakeClaw.setPosition(0.63);
+        intakeWrist.setPosition(0.50); //fully straight on
+        alpha.setPosition(0.76);
+        beta.setPosition(0.24);
     }
 
     @Override
@@ -190,13 +195,11 @@ public class intothedeep_tele extends OpMode{
             loopCumulativeTime = 0.0;
         }
 
-        rdsReading = rightDS.getDistance(DistanceUnit.MM);
-        ldsReading = leftDS.getDistance(DistanceUnit.MM);
+        //rdsReading = rightDS.getDistance(DistanceUnit.MM);
+        //ldsReading = leftDS.getDistance(DistanceUnit.MM);
 
         //extendo (analog)
-        if (Math.abs(gamepad2.left_stick_y) > 0.01) {
-            slidePositionTargetEx -= slideTargetGainEx * gamepad2.left_stick_y;
-        }
+
 
         //extendo digital
         /*if(gamepad2.dpad_up){ //extendo max
@@ -254,44 +257,95 @@ public class intothedeep_tele extends OpMode{
             beta.setPosition(0.24);
         }
 
+        if(carabiner.isPressed()){
+            carabinerPressed = true;
+        }
+
+        rs.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        ls.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        ms.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+
+        if (Math.abs(gamepad2.left_stick_y) > 0.01) {
+            slidePositionTargetVe -= slideTargetGainVe * gamepad2.left_stick_y;
+            verticalPower = 1.9*slidesPidVertical.calculatePowerVertical(slidePositionTargetVe);
+            ls.setPower(verticalPower);
+            ms.setPower(verticalPower);
+            rs.setPower(verticalPower);
+            slidesPidVertical.updateVe((ms.getCurrentPosition()), timeGap);
+        }
         //vertical analog
-        /*if(Math.abs(gamepad2.left_stick_y) > 0.01){
-            //slidePositionTargetVe -= slideTargetGainVe * gamepad2.left_stick_y;
-            if(gamepad2.left_stick_y > 0.60){
-                ls.setPower(-1.0);
-                ms.setPower(-1.0);
-                rs.setPower(-1.0);
-                slidePositionTargetVe = slideMin;
+        if(carabinerPressed){
+            slidePositionTargetVe -= slideTargetGainVe * gamepad2.right_stick_y;
+            rs.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+            ls.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+            ms.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+            verticalPower = 1.9*slidesPidVertical.calculatePowerVertical(slidePositionTargetVe);
+            ls.setPower(verticalPower);
+            ms.setPower(verticalPower);
+            rs.setPower(verticalPower);
+            slidesPidVertical.updateVe((ms.getCurrentPosition()), timeGap);
+        }
+        else {
+            if (Math.abs(gamepad2.right_stick_y) > 0.01) {
+                if (gamepad2.right_stick_y > 0.60) {
+                    ls.setPower(-1.0);
+                    ms.setPower(-1.0);
+                    rs.setPower(-1.0);
+                    slidePositionTargetVe = slideMin;
+                } else if (gamepad2.right_stick_y < -0.60) {
+                    ls.setPower(1.0);
+                    rs.setPower(1.0);
+                    ms.setPower(1.0);
+                    slidePositionTargetVe = slideMaxVe;
+                }
             }
-            else if(gamepad2.left_stick_y < -0.60){
-                ls.setPower(1.0);
-                rs.setPower(1.0);
-                ms.setPower(1.0);
-                slidePositionTargetVe = slideMaxVe;
-            }
-        }*/
+        }
 
         //vertical digital
         if(gamepad1.dpad_up){ //vertical slides max
             slidePositionTargetVe = slideMaxVe;
+            rs.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+            ls.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+            ms.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+            verticalPower = 1.9*slidesPidVertical.calculatePowerVertical(slidePositionTargetVe);
+            ls.setPower(verticalPower);
+            ms.setPower(verticalPower);
+            rs.setPower(verticalPower);
+            slidesPidVertical.updateVe((ls.getCurrentPosition() + rs.getCurrentPosition() + ms.getCurrentPosition())/3, timeGap);
         }
 
         if(gamepad1.dpad_down){ //zero vertical slides
             slidePositionTargetVe = slideMin;
+            rs.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+            ls.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+            ms.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+            verticalPower = 1.9*slidesPidVertical.calculatePowerVertical(slidePositionTargetVe);
+            ls.setPower(verticalPower);
+            ms.setPower(verticalPower);
+            rs.setPower(verticalPower);
+            slidesPidVertical.updateVe((ls.getCurrentPosition() + rs.getCurrentPosition() + ms.getCurrentPosition())/3, timeGap);
         }
 
-        if(gamepad1.dpad_right){ //specimen height
+        if(gamepad1.dpad_right && !gamepad1prev.dpad_right){ //specimen height
             slidePositionTargetVe = slideSpecimenVe;
+            rs.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+            ls.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+            ms.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+            verticalPower = 1.9*slidesPidVertical.calculatePowerVertical(slidePositionTargetVe);
+            ls.setPower(verticalPower);
+            ms.setPower(verticalPower);
+            rs.setPower(verticalPower);
+            slidesPidVertical.updateVe((ms.getCurrentPosition()), timeGap);
         }
 
-        rs.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        /*rs.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         ls.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         ms.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         verticalPower = 1.9*slidesPidVertical.calculatePowerVertical(slidePositionTargetVe);
         ls.setPower(verticalPower);
         ms.setPower(verticalPower);
         rs.setPower(verticalPower);
-        slidesPidVertical.updateVe((ls.getCurrentPosition() + rs.getCurrentPosition() + ms.getCurrentPosition())/3, timeGap);
+        slidesPidVertical.updateVe((ls.getCurrentPosition() + rs.getCurrentPosition() + ms.getCurrentPosition())/3, timeGap);*/
 
         if (slidePositionTargetVe < slideMin) {
             slidePositionTargetVe = slideMin;
@@ -301,7 +355,7 @@ public class intothedeep_tele extends OpMode{
         }
 
 
-        if (verticalSlidesLimit.isPressed()) { //vertical slides limit switch
+        /*if (verticalSlidesLimit.isPressed()) { //vertical slides limit switch
             if (!verticalSlidesPressed) {
                 ms.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
                 ls.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
@@ -310,10 +364,10 @@ public class intothedeep_tele extends OpMode{
             verticalSlidesPressed = true;
         } else {
             verticalSlidesPressed = false;
-        }
+        }*/
 
         //intake
-        if(Math.abs(gamepad2.right_stick_y) > 0.01 || Math.abs(gamepad2.right_stick_x) > 0.01) { //intake differential
+        /*if(Math.abs(gamepad2.right_stick_y) > 0.01 || Math.abs(gamepad2.right_stick_x) > 0.01) { //intake differential
             alphaPos = ((gamepad2.right_stick_x - Math.min(gamepad2.right_stick_y, 0.9))/4.0 + 0.5);
             betaPos = ((gamepad2.right_stick_x + Math.min(gamepad2.right_stick_y, 0.9))/4.0 + 0.5);
 
@@ -322,7 +376,7 @@ public class intothedeep_tele extends OpMode{
 
             prevAlphaPos = alpha.getPosition();
             prevBetaPos = beta.getPosition();
-        }
+        }*/
 
         if(!gamepad2prev.a && gamepad2.a){  //intake claw
             if(intakeClawClosed){
@@ -330,7 +384,7 @@ public class intothedeep_tele extends OpMode{
                 intakeClawClosed = false;
             }
             else{
-                intakeClaw.setPosition(0.92);
+                intakeClaw.setPosition(0.95);
                 intakeClawClosed = true;
             }
         }
@@ -382,8 +436,8 @@ public class intothedeep_tele extends OpMode{
         }
 
         if(!gamepad1prev.dpad_left && gamepad1.dpad_left){  //transfer between claws
-           // deltaLeft.setPosition(0.70);
-            //deltaLeft.setPosition(0.94);
+            deltaLeft.setPosition(0.69);
+            deltaLeft.setPosition(0.65);
             outputClaw.setPosition(outputClawOpenPosition);
             outputClawClosed = false;
         }
@@ -456,10 +510,10 @@ public class intothedeep_tele extends OpMode{
         double y = -gamepad1.left_stick_x; //verticals
         double x = -gamepad1.left_stick_y; //horizontal
         double r = -gamepad1.right_stick_x; //pivot and rotation
-        double scalar = 1.0;
+        double scalar = 0.5;
 
         if(gamepad1.left_bumper){
-            scalar = 0.5;
+            scalar = 0.3;
         }
 
         double preRF = r*scalar + y*scalar + x*scalar;
@@ -477,23 +531,17 @@ public class intothedeep_tele extends OpMode{
         gamepad1prev.copy(gamepad1);
         gamepad2prev.copy(gamepad2);
 
-        telemetry.addData("gamepad 2 right trigger", "gamepad 2 right trigger: " + gamepad2.right_trigger);
-        telemetry.addData("gamepad 2 left trigger", "gamepad 2 left trigger: " + gamepad2.left_trigger);
+        telemetry.addData("carabiner pressed", "carabiner pressed: " + carabinerPressed);
         telemetry.addData("intakeWrist position", "intake wrist position: " + intakeWrist.getPosition());
 
         telemetry.addData("alpha servo position", "alpha servo posotion: " + alpha.getPosition());
         telemetry.addData("beta servo position", "beta servo position: " + beta.getPosition());
-
-        telemetry.addData("right DS reading", "rightDS reading: " + rdsReading);
-        telemetry.addData("left DS reading", "leftDS reading: " + ldsReading);
 
         telemetry.addData("intakeClawPos", "intake claw position: " + intakeClaw.getPosition());
         telemetry.addData("outputWristPos", "output wrist position: " + outputWrist.getPosition());
         telemetry.addData("deltaLeft", "deltaLeft position: " + deltaLeft.getPosition());
         telemetry.addData("deltaRight", "deltaRight position: " + deltaRight.getPosition());
 
-        telemetry.addData("rs position", "rs position: " + rs.getCurrentPosition());
-        telemetry.addData("ls position", "ls position: " + ls.getCurrentPosition());
         telemetry.addData("ms position", "ms position: " + ms.getCurrentPosition());
         telemetry.addData("rs power", "rs power: " + rs.getPower());
         telemetry.addData("ls power", "ls power: " + ls.getPower());
