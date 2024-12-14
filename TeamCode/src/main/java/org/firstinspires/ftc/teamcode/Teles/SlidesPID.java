@@ -17,7 +17,7 @@ public class SlidesPID {
     private double runTimeEx = 0.0;
 
 
-    public static double KpVe = 0.0025;
+    public static double KpVe = 0.005;
     public static double KiVe = 0.0;
     public static double KdVe = 0.05;
     private double integralVe = 0.0;
