@@ -43,10 +43,11 @@ public class SamplePositionManager
 
     boolean previousParity = true;
     double initialX, initialY, initialHeading, nextInitialX, nextInitialY, nextInitialHeading;
-    double lerpProportionToDeviate = 0.9; // lerp may be irrelevant due to variation in the point to which the estimation is relative but we shall see
+    double lerpProportionToDeviate = 0.9; // lerp may be irrelevant due to variation in the point to which the estimation is relative but we shall see, I feel like it should just be 1
     double relativeSampleX, relativeSampleY, relativeSampleRotation;
 
     double[] strafeCorrections = new double[2];
+    int inactiveCycles = 0;
     double yDistanceToIntake = 100; // needs adjustment
 
     public void initialize(int colorToSeek) {
@@ -95,14 +96,19 @@ public class SamplePositionManager
         previousParity = newParity;
 
         // update sample position relative to initial robot pose (its possible that this should happen only when parity switches i.e. when the camera finishes processing its frame and the results are in)
-        if(relativeSampleX != null) {
-            relativeSampleX = (1 - lerpProportionToDeviate) * relativeSampleX + lerpProportionToDeviate * detectionPipeline.desiredSampleX;
-            relativeSampleY = (1 - lerpProportionToDeviate) * relativeSampleY + lerpProportionToDeviate * detectionPipeline.desiredSampleY;
-            relativeSampleRotation = (1 - lerpProportionToDeviate) * relativeSampleRotation + lerpProportionToDeviate * detectionPipeline.desiredSampleHeading;
+        if(detectionPipeline.desiredSampleX != -1 && detectionPipeline.desiredSampleY != -1 && detectionPipeline.desiredSampleRotation != -1) {
+            inactionCycles = 0;
+            if(relativeSampleX != null) {
+                relativeSampleX = (1 - lerpProportionToDeviate) * relativeSampleX + lerpProportionToDeviate * detectionPipeline.desiredSampleX;
+                relativeSampleY = (1 - lerpProportionToDeviate) * relativeSampleY + lerpProportionToDeviate * detectionPipeline.desiredSampleY;
+                relativeSampleRotation = (1 - lerpProportionToDeviate) * relativeSampleRotation + lerpProportionToDeviate * detectionPipeline.desiredSampleHeading;
+            } else {
+                relativeSampleX = detectionPipeline.desiredSampleX;
+                relativeSampleY = detectionPipeline.desiredSampleY;
+                relativeSampleRotation = detectionPipeline.desiredSampleHeading;
+            }
         } else {
-            relativeSampleX = detectionPipeline.desiredSampleX;
-            relativeSampleY = detectionPipeline.desiredSampleY;
-            relativeSampleRotation = detectionPipeline.desiredSampleHeading;
+            inactionCycles++;
         }
 
         double dX = odoX - initialX;
@@ -125,5 +131,9 @@ public class SamplePositionManager
 
     public double[] getCorrectionValues() {
         return strafeCorrections;
+    }
+
+    public boolean trustworthyOutput() {
+        return inactiveCycles < 15;
     }
 }
