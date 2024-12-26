@@ -64,7 +64,7 @@ public class WebcamExample extends LinearOpMode
          * of a frame from the camera. Note that switching pipelines on-the-fly
          * (while a streaming session is in flight) *IS* supported.
          */
-        webcam.setPipeline(new VisionPipeline(true, true, false));
+        webcam.setPipeline(new VisionPipeline(1));
 
         /*
          * Open the connection to the camera device. New in v1.4.0 is the ability

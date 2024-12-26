@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.Subsystems;
+/*package org.firstinspires.ftc.teamcode.Subsystems;
 
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.openftc.easyopencv.*;
@@ -52,4 +52,5 @@ public class Camera {
     public void stop() {
         webcam.stopStreaming();
     }
-}
+}*/
+

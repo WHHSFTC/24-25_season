@@ -2,6 +2,7 @@ package org.firstinspires.ftc.teamcode.Subsystems;
 import com.acmerobotics.dashboard.config.Config;
 import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import org.firstinspires.ftc.robotcore.external.Telemetry;
+import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 import org.opencv.core.Core;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
@@ -66,8 +67,8 @@ public class VisionPipeline extends OpenCvPipeline {
     public int minPointsForLine = 15, minLineLength = 18, maxGapForLine = 14, blurKernel = 17;
     public double maxSquaredLineDistance = 9000, minAcceptableLineAngleCosine = 0.97, widthDifferenceTolerance = 3.5, sampleWidth = 33, cannyParam1 = 50, cannyParam2 = 150;
 
-    private final Telemetry telemetry;
-    public SampleEdgeDetectionPipeline(Telemetry telemetry) {
+    private Telemetry telemetry;
+    public VisionPipeline(Telemetry telemetry) {
         this.telemetry = telemetry;
     }
 

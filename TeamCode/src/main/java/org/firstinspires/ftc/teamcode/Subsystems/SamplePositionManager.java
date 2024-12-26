@@ -22,7 +22,9 @@
 package org.firstinspires.ftc.teamcode.Subsystems;
 
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.hardware.HardwareMap;
 
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.opencv.core.Mat;
@@ -35,20 +37,30 @@ import org.openftc.easyopencv.OpenCvCameraRotation;
 import org.openftc.easyopencv.OpenCvPipeline;
 import org.openftc.easyopencv.OpenCvWebcam;
 
+import static org.firstinspires.ftc.robotcore.external.BlocksOpModeCompanion.hardwareMap;
+import static org.firstinspires.ftc.robotcore.external.BlocksOpModeCompanion.telemetry;
+
+
 @TeleOp
-public class SamplePositionManager
+abstract public class SamplePositionManager extends OpMode
 {
     OpenCvWebcam webcam;
     VisionPipeline detectionPipeline;
 
     boolean previousParity = true;
     double initialX, initialY, initialHeading, nextInitialX, nextInitialY, nextInitialHeading;
-    double lerpProportionToDeviate = 0.9; // lerp may be irrelevant due to variation in the point to which the estimation is relative but we shall see, I feel like it should just be 1
+    double lerpProportionToDeviate = 1.0; // lerp may be irrelevant due to variation in the point to which the estimation is relative but we shall see, I feel like it should just be 1
     double relativeSampleX, relativeSampleY, relativeSampleRotation;
 
-    double[] strafeCorrections = new double[2];
-    int inactiveCycles = 0;
+    double[] strafeCorrections = new double[3];
+    int inactionCycles = 0;
     double yDistanceToIntake = 100; // needs adjustment
+    private HardwareMap hardwareMap;
+    int cameraMonitorViewId =
+            hardwareMap
+                    .appContext
+                    .getResources()
+                    .getIdentifier("cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
 
     public void initialize(int colorToSeek) {
 
@@ -82,10 +94,10 @@ public class SamplePositionManager
         webcam.stopStreaming();
     }
 
-    public double[] getCorrections(double odoX, double odoY, double odoHeading) {
+    public void doSampleEstimationCycle(double odoX, double odoY, double odoHeading) {
         boolean newParity = detectionPipeline.parity;
         // if the camera captures a new frame, reset the initial pose
-        if(previousParity != newParity || initialX != null) {
+        if(previousParity != newParity) {
             initialX = nextInitialX;
             initialY = nextInitialY;
             initialHeading = nextInitialHeading;
@@ -96,17 +108,13 @@ public class SamplePositionManager
         previousParity = newParity;
 
         // update sample position relative to initial robot pose (its possible that this should happen only when parity switches i.e. when the camera finishes processing its frame and the results are in)
-        if(detectionPipeline.desiredSampleX != -1 && detectionPipeline.desiredSampleY != -1 && detectionPipeline.desiredSampleRotation != -1) {
+        if(detectionPipeline.desiredSampleX != -1 && detectionPipeline.desiredSampleY != -1 && detectionPipeline.desiredSampleTheta != -1) {
             inactionCycles = 0;
-            if(relativeSampleX != null) {
-                relativeSampleX = (1 - lerpProportionToDeviate) * relativeSampleX + lerpProportionToDeviate * detectionPipeline.desiredSampleX;
-                relativeSampleY = (1 - lerpProportionToDeviate) * relativeSampleY + lerpProportionToDeviate * detectionPipeline.desiredSampleY;
-                relativeSampleRotation = (1 - lerpProportionToDeviate) * relativeSampleRotation + lerpProportionToDeviate * detectionPipeline.desiredSampleHeading;
-            } else {
-                relativeSampleX = detectionPipeline.desiredSampleX;
-                relativeSampleY = detectionPipeline.desiredSampleY;
-                relativeSampleRotation = detectionPipeline.desiredSampleHeading;
-            }
+
+            relativeSampleX = detectionPipeline.desiredSampleX;
+            relativeSampleY = detectionPipeline.desiredSampleY;
+            relativeSampleRotation = detectionPipeline.desiredSampleTheta;
+
         } else {
             inactionCycles++;
         }
@@ -115,11 +123,13 @@ public class SamplePositionManager
         double dY = odoY - initialY;
         double dHeading = odoHeading - initialHeading;
 
-        double m = Math.sqrt((dx - relativeSampleX) * (dx - relativeSampleX) + (dy - relativeSampleY) * (dy - relativeSampleY));
-        double A = dHeading + Math.atan2(x - dx, y - dy);
+        double m = Math.sqrt((dX - relativeSampleX) * (dX - relativeSampleX) + (dY - relativeSampleY) * (dY - relativeSampleY));
+        double A = dHeading + Math.atan2(relativeSampleX - dX, relativeSampleY - dY);
 
         strafeCorrections[0] = m * Math.cos(A);
         strafeCorrections[1] = m * Math.sin(A) - yDistanceToIntake;
+        strafeCorrections[2] = (relativeSampleRotation + Math.atan2(dX,dY))*-0.140056 + 0.73333;
+
 
         telemetry.addData("Pipeline time ms", webcam.getPipelineTimeMs());
         telemetry.addData("Overhead time ms", webcam.getOverheadTimeMs());
@@ -134,6 +144,6 @@ public class SamplePositionManager
     }
 
     public boolean trustworthyOutput() {
-        return inactiveCycles < 15;
+        return inactionCycles < 15;
     }
 }

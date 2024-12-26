@@ -38,12 +38,16 @@ public class fsm_itd extends OpMode {
         OUTPUT_OZONE,
         OUTPUTARM_TRANSFER,
         OUTPUTCLAW_OPEN,
+        OUTPUTCLAWSPECIMEN_OPEN,
+        SPECIMEN_DELAY,
+        RESET_SPECIMEN,
         RESET,
 
         HANG_UP1,
         HANG_DOWN1,
         HANG_UP2,
         HANG_DOWN2,
+        CARABINER,
 
         INIT
     }
@@ -105,8 +109,8 @@ public class fsm_itd extends OpMode {
     public static double slideMin = 0.0;
     public static double slideMaxEx = 450.0;
     public static double slideMaxVe = 1950.0;
-    public static double slideSpecimenVe = 530.0;
-    public static double slideHang1Ve = 1400;
+    public static double slideSpecimenVe = 560.0;
+    public static double slideHang1Ve = 1300;
     public static double slideHang2Ve = 1950;
     double slidePositionTargetEx;
     double slidePositionTargetVe;
@@ -130,12 +134,13 @@ public class fsm_itd extends OpMode {
     public static double outputClawOpenPos = 0.76;
 
     //times
-    final double INTAKELOWER_TIME = 0.05;
-    final double INTAKECLAW_TIME = 0.40;
-    final double OUTPUTCLAW_TIME = 0.25;
-    final double OUTPUTARM_READY = 0.20;
-    final double HANG1_UP_TIME = 3.50;
-    final double HANG2_UP_TIME = 3.50;
+    final double INTAKELOWER_TIME = 0.10;
+    final double INTAKECLAW_TIME = 0.30;
+    final double OUTPUTCLAW_TIME = 0.10;
+    final double OUTPUTARM_READY = 0.10;
+    final double HANG1_UP_TIME = 2.50;
+    final double HANG2_UP_TIME = 2.50;
+    final double CARABINER_TIME = 1.00;
 
     //loop constants
     double timeGap;
@@ -155,6 +160,8 @@ public class fsm_itd extends OpMode {
     boolean exAddPower = false;
     boolean veAddPowerDown = false;
     boolean veAddPowerUp = false;
+    boolean veHangPower = false;
+    boolean outputWristSpecimen = false;
     double tuningPos1 = 0.5;
     double tuningPos2 = 0.5;
 
@@ -290,14 +297,14 @@ public class fsm_itd extends OpMode {
         rs.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         ls.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         ms.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        verticalPower = 2.3*slidesPidVertical.calculatePowerVertical(slidePositionTargetVe) + veConstantPID;
+        verticalPower = 1.4*slidesPidVertical.calculatePowerVertical(slidePositionTargetVe) + veConstantPID;
         ls.setPower(verticalPower);
         ms.setPower(verticalPower);
         rs.setPower(verticalPower);
         slidesPidVertical.updateVe((ms.getCurrentPosition()), timeGap);
 
         if(exAddPower){
-            exConstantPID = -0.3;
+            exConstantPID = -0.4;
         }else{
             exConstantPID = 0.0;
         }
@@ -312,6 +319,10 @@ public class fsm_itd extends OpMode {
             veConstantPID = 0.2;
         }else{
             veConstantPID = 0.0;
+        }
+
+        if(veHangPower){
+            veConstantPID = -1.0;
         }
 
         switch(telestate){
@@ -361,7 +372,7 @@ public class fsm_itd extends OpMode {
                 break;
             case BRING_IN:
                 if(stateTimer.seconds() >= INTAKECLAW_TIME){
-                    if(intakeColor.blue() > 100 || intakeColor.red() > 100 || intakeColor.green() > 100) {
+                    if(intakeColor.blue() > 300 || intakeColor.red() > 300 || intakeColor.green() > 300) {
                         exAddPower = true;
                         slidePositionTargetEx = slideMin;
                         intakeWrist.setPosition(intakeWristStraightPos);
@@ -380,12 +391,23 @@ public class fsm_itd extends OpMode {
                 break;
             case OUTPUTARM_TRANSFER:
                 if(transferPressed && extendoPressed){
-                    exAddPower = false;
-                    deltaLeft.setPosition(deltaLeftTransferPos);
-                    deltaRight.setPosition(deltaRightTransferPos);
-                    telestate = TeleState.OUTPUTCLAW_CLOSE;
-                    stateTimer.reset();
-                }
+                    if(intakeColor.blue() > 300 || intakeColor.red() > 300 || intakeColor.green() > 300){
+                        exAddPower = false;
+                        deltaLeft.setPosition(deltaLeftTransferPos);
+                        deltaRight.setPosition(deltaRightTransferPos);
+                        telestate = TeleState.OUTPUTCLAW_CLOSE;
+                        stateTimer.reset();
+                        }
+                    else{
+                        slidePositionTargetEx = slideMaxEx;
+                        alpha.setPosition(alphaIntakePos);
+                        beta.setPosition(betaIntakePos);
+                        intakeClaw.setPosition(intakeClawOpenPos);
+                        intakeWristPos = intakeWristStraightPos;
+                        intakeWrist.setPosition(intakeWristStraightPos);
+                        telestate = TeleState.ARM_INTAKE;
+                        }
+                    }
                 break;
             case OUTPUTCLAW_CLOSE:
                 if(stateTimer.seconds() >= OUTPUTARM_READY){
@@ -402,13 +424,13 @@ public class fsm_itd extends OpMode {
                 }
                 break;
             case OUTPUT_BRANCH:
-                if(specimenOutputState && stateTimer.seconds() > INTAKECLAW_TIME){
+                if(specimenOutputState && stateTimer.seconds() > 0.10){
                     telestate = TeleState.OUTPUT_SPECIMEN;
                 }
-                if(sampleOutputState && stateTimer.seconds() > INTAKECLAW_TIME){
+                if(sampleOutputState && stateTimer.seconds() > 0.10){
                     telestate = TeleState.OUTPUT_BASKET;
                 }
-                if(ozoneOutputState && stateTimer.seconds() > INTAKECLAW_TIME){
+                if(ozoneOutputState && stateTimer.seconds() > 0.10){
                     telestate = TeleState.OUTPUT_OZONE;
                 }
                 break;
@@ -421,12 +443,22 @@ public class fsm_itd extends OpMode {
                 telestate = TeleState.OUTPUTCLAW_OPEN;
                 break;
             case OUTPUT_SPECIMEN:
-                veAddPowerUp = true;
+                veAddPowerUp = false;
                 slidePositionTargetVe = slideSpecimenVe;
                 deltaLeft.setPosition(deltaLeftSpecimenPos);
                 deltaRight.setPosition(deltaRightSpecimenPos);
                 outputWrist.setPosition(outputWristSpecimenPos);
-                telestate = TeleState.OUTPUTCLAW_OPEN;
+                outputWristSpecimen = true;
+                stateTimer.reset();
+                telestate = TeleState.SPECIMEN_DELAY;
+                break;
+            case SPECIMEN_DELAY:
+                if(stateTimer.seconds() >= 0.1){
+                slidePositionTargetEx = slideMaxEx;
+                alpha.setPosition(alphaIntakePos);
+                beta.setPosition(betaIntakePos);
+                telestate = TeleState.OUTPUTCLAWSPECIMEN_OPEN;
+                }
                 break;
             case OUTPUT_OZONE:
                 slidePositionTargetVe = slideMin;
@@ -434,6 +466,14 @@ public class fsm_itd extends OpMode {
                 deltaRight.setPosition(deltaRightSpecimenPos);
                 outputWrist.setPosition(outputWristStraightPos);
                 telestate = TeleState.OUTPUTCLAW_OPEN;
+                break;
+            case OUTPUTCLAWSPECIMEN_OPEN:
+                veAddPowerUp = false;
+                if(gamepad1.a && !gamepad1prev.a){
+                    outputClaw.setPosition(outputClawOpenPos);
+                    telestate = TeleState.RESET_SPECIMEN;
+                    stateTimer.reset();
+                }
                 break;
             case OUTPUTCLAW_OPEN:
                 veAddPowerUp = false;
@@ -443,8 +483,21 @@ public class fsm_itd extends OpMode {
                     stateTimer.reset();
                 }
                 break;
+            case RESET_SPECIMEN:
+                if(stateTimer.seconds() >= 0.35 && outputDS.getDistance(DistanceUnit.MM) > 350){
+                    outputWrist.setPosition(outputWristStraightPos);
+                    deltaLeft.setPosition(deltaLeftPreTransfer);
+                    deltaRight.setPosition(deltaRightPreTransfer);
+                    veAddPowerDown = true;
+                    slidePositionTargetVe = slideMin;
+                    specimenOutputState = false;
+                    ozoneOutputState = false;
+                    sampleOutputState = false;
+                    telestate = TeleState.BRING_IN;
+                }
+                break;
             case RESET:
-                if(stateTimer.seconds() >= OUTPUTCLAW_TIME && outputDS.getDistance(DistanceUnit.MM) > 350){
+                if(stateTimer.seconds() >= 0.35 && outputDS.getDistance(DistanceUnit.MM) > 350){
                     outputWrist.setPosition(outputWristStraightPos);
                     deltaLeft.setPosition(deltaLeftPreTransfer);
                     deltaRight.setPosition(deltaRightPreTransfer);
@@ -464,30 +517,40 @@ public class fsm_itd extends OpMode {
                 break;
             case HANG_DOWN1:
                 if(stateTimer.seconds() >= HANG1_UP_TIME){
-                    veAddPowerDown = true;
+                    veHangPower = true;
                     slidePositionTargetVe = slideMin;
                     if(carabinerPressed){
-                        slidePositionTargetVe = 150;
-                        carabinerPressed = false;
-                        telestate = TeleState.HANG_UP2;
+                        telestate = TeleState.CARABINER;
+                        stateTimer.reset();
                     }
                 }
+                break;
+            case CARABINER:
+                if(stateTimer.seconds() >= CARABINER_TIME){
+                    veHangPower = false;
+                    slidePositionTargetVe = 300;
+                    carabinerPressed = false;
+                    telestate = TeleState.HANG_UP2;
+                }
+                break;
             case HANG_UP2:
                 if(gamepad1.dpad_right && !gamepad1prev.dpad_right){
                     veAddPowerUp = true;
                     slidePositionTargetVe = slideHang2Ve;
                     telestate = TeleState.HANG_DOWN2;
                     stateTimer.reset();
-                    break;
                 }
+                break;
             case HANG_DOWN2:
                 if(stateTimer.seconds() >= HANG2_UP_TIME){
                     veAddPowerDown = true;
                     slidePositionTargetVe = slideMin;
                     if(carabinerPressed){
-                        slidePositionTargetVe = 150;
+                        telestate = TeleState.CARABINER;
+                        stateTimer.reset();
                     }
                 }
+                break;
         }
 
         if(transferLimit.isPressed()){
@@ -520,7 +583,7 @@ public class fsm_itd extends OpMode {
 
         //intake wrist
         if(gamepad2.left_trigger > 0.0){
-            intakeWristPos -= 0.01;
+            intakeWristPos -= 0.03;
             if(intakeWristPos < intakeWristLeftLimit){
                 intakeWristPos = intakeWristLeftLimit;
             }
@@ -528,7 +591,7 @@ public class fsm_itd extends OpMode {
         }
 
         if(gamepad2.right_trigger > 0.0){
-            intakeWristPos += 0.01;
+            intakeWristPos += 0.03;
             if(intakeWristPos > intakeWristRightLimit){
                 intakeWristPos = intakeWristRightLimit;
             }
@@ -536,7 +599,15 @@ public class fsm_itd extends OpMode {
         }
 
         if(gamepad1.right_bumper && !gamepad1prev.right_bumper){
-            outputWrist.setPosition(outputWristSwitchPos);
+            if(outputWristSpecimen){
+                outputWrist.setPosition(outputWristSwitchPos);
+                slidePositionTargetVe += 100;
+                outputWristSpecimen = false;
+            }else{
+                outputWrist.setPosition(outputWristSpecimenPos);
+                slidePositionTargetVe -= 100;
+                outputWristSpecimen = true;
+            }
         }
 
         //hang
@@ -580,7 +651,7 @@ public class fsm_itd extends OpMode {
         double y = -gamepad1.left_stick_x; //verticals
         double x = -gamepad1.left_stick_y; //horizontal
         double r = -gamepad1.right_stick_x; //pivot and rotation
-        double scalar = 0.85;
+        double scalar = 0.95;
 
         if(gamepad1.left_bumper && !gamepad1prev.left_bumper){
             if(turtle){
@@ -592,10 +663,10 @@ public class fsm_itd extends OpMode {
         }
 
         if(turtle){
-            scalar = 0.3;
+            scalar = 0.5;
         }
         else{
-            scalar = 0.85;
+            scalar = 0.95;
         }
 
         double preRF = r*scalar + y*scalar + x*scalar;
@@ -613,6 +684,7 @@ public class fsm_itd extends OpMode {
         gamepad1prev.copy(gamepad1);
         gamepad2prev.copy(gamepad2);
 
+        telemetry.addData("carabiner sensor", "carabiner: " + carabinerPressed);
         telemetry.addData("intake color red", "red: " + intakeColor.red());
         telemetry.addData("intake color blue", "blue: " + intakeColor.blue());
         telemetry.addData("intake color green", "green: " + intakeColor.green());
