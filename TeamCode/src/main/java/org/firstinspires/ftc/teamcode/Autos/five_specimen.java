@@ -31,7 +31,6 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 @Autonomous
 public class five_specimen extends OpMode{
 
-    MecanumDrive drive;
     TrajectoryActionBuilder preloadSpecimen;
     TrajectoryActionBuilder getToFirst;
     TrajectoryActionBuilder getToSecond;
@@ -52,7 +51,7 @@ public class five_specimen extends OpMode{
 
     public void init(){
         Pose2d startPos = new Pose2d(-7.1791, 65.21, Math.toRadians(90));
-        drive = new MecanumDrive(hardwareMap, startPos);
+        MecanumDrive drive = new MecanumDrive(hardwareMap, startPos);
 
         preloadSpecimen = drive.actionBuilder(startPos)
                 .strafeToConstantHeading(new Vector2d(0, 31));
@@ -89,6 +88,9 @@ public class five_specimen extends OpMode{
         park = drive.actionBuilder(new Pose2d(-7, 33, Math.toRadians(120)))
                 .setTangent(Math.toRadians(135))
                 .splineToLinearHeading(new Pose2d(-60, 60, Math.toRadians(270)), Math.toRadians(90));
+    }
+
+    public void loop(){
 
         pSpec = preloadSpecimen.build();
         gtFirst = getToFirst.build();
@@ -98,9 +100,7 @@ public class five_specimen extends OpMode{
         stOutput = splineToOutput.build();
         stIntake = splineToIntake.build();
         par = park.build();
-    }
 
-    public void loop(){
         Actions.runBlocking(
                 new SequentialAction(
                         pSpec,
