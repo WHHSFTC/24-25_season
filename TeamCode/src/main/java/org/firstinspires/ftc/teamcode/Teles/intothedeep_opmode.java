@@ -47,6 +47,7 @@ public class intothedeep_opmode extends OpMode{
     ColorSensor intakeColor;
     DistanceSensor leftDS;
     DistanceSensor rightDS;
+    DistanceSensor outputDS;
 
     Servo alpha;
     Servo beta;
@@ -77,10 +78,10 @@ public class intothedeep_opmode extends OpMode{
     //slides constants
     public static double slideMin = 0.0;
     public static double slideMaxEx = 450.0;
-    public static double slideMaxVe = 1100.0;
-    public static double slideSpecimenVe = 530.0;
-    public static double slideHang1Ve;
-    public static double slideHang2Ve;
+    public static double slideMaxVe = 1950.0;
+    public static double slideSpecimenVe = 560.0;
+    public static double slideHang1Ve = 1300;
+    public static double slideHang2Ve = 1950;
     double slidePositionTargetEx;
     double slidePositionTargetVe;
     double verticalPower;
@@ -88,14 +89,14 @@ public class intothedeep_opmode extends OpMode{
     SlidesPID slidesPidVertical;
 
     //output constants
-    public static double deltaRightPreTransfer = 0.59;
-    public static double deltaLeftPreTransfer = 0.03;
-    public static double deltaRightTransferPos = 0.61;
-    public static double deltaLeftTransferPos = 0.02;
+    public static double deltaRightPreTransfer = 0.58;
+    public static double deltaLeftPreTransfer = 0.21;
+    public static double deltaRightTransferPos = 0.63;
+    public static double deltaLeftTransferPos = 0.15;
     public static double deltaRightSamplePos = 0.45;
-    public static double deltaLeftSamplePos = 0.18;
-    public static double deltaRightSpecimenPos = 0.23;
-    public static double deltaLeftSpecimenPos = 0.0;
+    public static double deltaLeftSamplePos = 0.34;
+    public static double deltaRightSpecimenPos = 0.35;
+    public static double deltaLeftSpecimenPos = 0.20;
     public static double outputWristStraightPos = 0.90;
     public static double outputWristSwitchPos = 0.23;
     public static double outputWristSpecimenPos = 0.30;
@@ -103,12 +104,13 @@ public class intothedeep_opmode extends OpMode{
     public static double outputClawOpenPos = 0.76;
 
     //times
-    final double INTAKELOWER_TIME = 0.05;
-    final double INTAKECLAW_TIME = 0.40;
-    final double OUTPUTCLAW_TIME = 0.35;
-    final double OUTPUTARM_READY = 0.20;
-    final double HANG1_UP_TIME = 0.70;
-    final double HANG2_UP_TIME = 1.00;
+    final double INTAKELOWER_TIME = 0.10;
+    final double INTAKECLAW_TIME = 0.30;
+    final double OUTPUTCLAW_TIME = 0.10;
+    final double OUTPUTARM_READY = 0.10;
+    final double HANG1_UP_TIME = 2.50;
+    final double HANG2_UP_TIME = 2.50;
+    final double CARABINER_TIME = 1.00;
 
     //loop constants
     double timeGap;
@@ -123,6 +125,13 @@ public class intothedeep_opmode extends OpMode{
     boolean sampleOutputState;
     boolean specimenOutputState;
     boolean ozoneOutputState;
+    public static double exConstantPID = 0.0;
+    public static double veConstantPID = 0.0;
+    boolean exAddPower = false;
+    boolean veAddPowerDown = false;
+    boolean veAddPowerUp = false;
+    boolean veHangPower = false;
+    boolean outputWristSpecimen = false;
     double tuningPos1 = 0.5;
     double tuningPos2 = 0.5;
 
@@ -201,6 +210,38 @@ public class intothedeep_opmode extends OpMode{
 
     @Override
     final public void loop(){
+
+        extendo.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        extendo.setPower(2.4*slidesPidExtendo.calculatePowerExtendo(slidePositionTargetEx) + exConstantPID);
+        slidesPidExtendo.updateEx(extendo.getCurrentPosition(), timeGap);
+
+        rs.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        ls.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        ms.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        verticalPower = 1.4*slidesPidVertical.calculatePowerVertical(slidePositionTargetVe) + veConstantPID;
+        ls.setPower(verticalPower);
+        ms.setPower(verticalPower);
+        rs.setPower(verticalPower);
+        slidesPidVertical.updateVe((ms.getCurrentPosition()), timeGap);
+
+        for (LynxModule hub : bothHubs) {
+            hub.clearBulkCache();
+        }
+
+        //bulk read
+        rf.getCurrentPosition();
+        lf.getCurrentPosition();
+        rb.getCurrentPosition();
+        lb.getCurrentPosition();
+        ls.getCurrentPosition();
+        rs.getCurrentPosition();
+        ms.getCurrentPosition();
+        extendo.getCurrentPosition();
+        extendoSlidesLimit.isPressed();
+        verticalSlidesLimit.isPressed();
+        carabinerLimit.isPressed();
+        transferLimit.isPressed();
+
         timeGap = slidesTimer.milliseconds();
         slidesTimer.reset();
 
@@ -213,61 +254,45 @@ public class intothedeep_opmode extends OpMode{
             loopCumulativeTime = 0.0;
         }
 
-        //extendo digital
-        extendo.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        extendo.setPower(2.1*slidesPidExtendo.calculatePowerExtendo(slidePositionTargetEx));
-        slidesPidExtendo.updateEx(extendo.getCurrentPosition(), timeGap);
-
-        if (slidePositionTargetEx < slideMin) {
-            slidePositionTargetEx = slideMin;
-        }
-        if (slidePositionTargetEx > slideMaxEx) {
-            slidePositionTargetEx = slideMaxEx;
+        if(transferLimit.isPressed()){
+            transferPressed = true;
+        }else{
+            transferPressed = false;
         }
 
-        //vertical digital
-        rs.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        ls.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        ms.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        verticalPower = 1.9*slidesPidVertical.calculatePowerVertical(slidePositionTargetVe);
-        ls.setPower(verticalPower);
-        ms.setPower(verticalPower);
-        rs.setPower(verticalPower);
-        slidesPidVertical.updateVe(((double)ms.getCurrentPosition())/3, timeGap);
-
-        if (slidePositionTargetVe < slideMin) {
-            slidePositionTargetVe = slideMin;
+        if(carabinerLimit.isPressed()){
+            carabinerPressed = true;
         }
-        if (slidePositionTargetVe > slideMaxVe) {
-            slidePositionTargetVe = slideMaxVe;
+        else{
+            carabinerPressed = false;
         }
 
-        //drivetrain
-        double y = -gamepad1.left_stick_x; //verticals
-        double x = -gamepad1.left_stick_y; //horizontal
-        double r = -gamepad1.right_stick_x; //pivot and rotation
-        double scalar = 0.5;
-
-        if(gamepad1.left_bumper){
-            scalar = 0.3;
+        if(extendoSlidesLimit.isPressed()){
+            extendoPressed = true;
+            extendo.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        }
+        else{
+            extendoPressed = false;
         }
 
-        double preRF = r*scalar + y*scalar + x*scalar;
-        double preLF = r*scalar + y*scalar - x*scalar;
-        double preRB = r*scalar -y*scalar + x*scalar;
-        double preLB = r*scalar -y*scalar -x*scalar;
+        if(verticalSlidesLimit.isPressed()){
+            verticalPressed = true;
+            ms.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+            ls.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+            rs.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        }
+        else{
+            verticalPressed = false;
+        }
 
-        double max = Math.max(Math.max(Math.max(Math.max(preRF, preRB), preLB), preLF), 1);
+        childLoop();
 
-        rf.setPower(preRF/max);
-        lf.setPower(preLF/max);
-        rb.setPower(preRB/max);
-        lb.setPower(preLB/max);
-
-        gamepad1prev.copy(gamepad1);
-        gamepad2prev.copy(gamepad2);
-
-        telemetry.addData("carabiner pressed", "carabiner pressed: " + carabinerPressed);
+        telemetry.addData("carabiner sensor", "carabiner: " + carabinerPressed);
+        telemetry.addData("intake color red", "red: " + intakeColor.red());
+        telemetry.addData("intake color blue", "blue: " + intakeColor.blue());
+        telemetry.addData("intake color green", "green: " + intakeColor.green());
+        telemetry.addData("transferPressed", "transfer pressed: " + transferPressed);
+        telemetry.addData("battery voltage", "battery voltage: " + voltageSensor.getVoltage());
         telemetry.addData("intakeWrist position", "intake wrist position: " + intakeWrist.getPosition());
 
         telemetry.addData("alpha servo position", "alpha servo posotion: " + alpha.getPosition());
@@ -275,6 +300,7 @@ public class intothedeep_opmode extends OpMode{
 
         telemetry.addData("intakeClawPos", "intake claw position: " + intakeClaw.getPosition());
         telemetry.addData("outputWristPos", "output wrist position: " + outputWrist.getPosition());
+        telemetry.addData("outputClawPos", "out claw position: " + outputClaw.getPosition());
         telemetry.addData("deltaLeft", "deltaLeft position: " + deltaLeft.getPosition());
         telemetry.addData("deltaRight", "deltaRight position: " + deltaRight.getPosition());
 
@@ -282,15 +308,13 @@ public class intothedeep_opmode extends OpMode{
         telemetry.addData("rs power", "rs power: " + rs.getPower());
         telemetry.addData("ls power", "ls power: " + ls.getPower());
         telemetry.addData("ms power", "ms power: " + ms.getPower());
-        telemetry.addData("Error Vertical", "Error vertical: " + (slidePositionTargetVe - (ls.getCurrentPosition() + rs.getCurrentPosition() + ms.getCurrentPosition())/3));
+        telemetry.addData("Error Vertical", "Error vertical: " + (slidePositionTargetVe - (ms.getCurrentPosition())));
 
         telemetry.addData("Error Extendo", "Error Extendo: " + (slidePositionTargetEx - extendo.getCurrentPosition()));
         telemetry.addData("extendo position", "extendo position: " + extendo.getCurrentPosition());
         telemetry.addData("extendo power", "extendo power: " + extendo.getPower());
-        telemetry.addData("extendo slides pressed", "extendo slides pressed: " + extendoPressed);
 
-        telemetry.addData("gampead 2 left stick analog value", "gamepad 2 left stick analog value: " + gamepad2.left_stick_y);
-        telemetry.addData("gampead 2 right stick analog value", "gamepad 2 right stick analog value: " + gamepad2.right_stick_y);
+        telemetry.addData("time per loop", timeGap);
         telemetry.update();
 
         packet.put("slides target extendo", slidePositionTargetEx);
@@ -301,8 +325,8 @@ public class intothedeep_opmode extends OpMode{
         packet.put("extendo ki", "extendo ki" + SlidesPID.KiEx);
 
         packet.put("slides target vertical", slidePositionTargetVe);
-        packet.put("slides position vertical", ((ls.getCurrentPosition()) + ms.getCurrentPosition() + rs.getCurrentPosition())/3);
-        packet.put("slides power extendo", ls.getPower());
+        packet.put("slides position vertical", (ms.getCurrentPosition()));
+        packet.put("slides power extendo", ms.getPower());
         packet.put("vertical kp", "extendo kp" + SlidesPID.KpVe);
         packet.put("vertical kd", "extendo kd" + SlidesPID.KdVe);
         packet.put("vertical ki", "extendo ki" + SlidesPID.KiVe);
@@ -316,5 +340,9 @@ public class intothedeep_opmode extends OpMode{
         rb.setPower(0);
         lb.setPower(0);
         extendo.setPower(0);
+    }
+
+    public void childLoop(){
+
     }
 }

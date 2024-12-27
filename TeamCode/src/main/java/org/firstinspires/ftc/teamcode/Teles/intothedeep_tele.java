@@ -4,25 +4,19 @@ import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 import com.qualcomm.hardware.lynx.LynxModule;
-import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.ColorSensor;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.DistanceSensor;
-import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.hardware.TouchSensor;
-import com.qualcomm.robotcore.hardware.VoltageSensor;
-import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 
-import java.util.List;
-
 @Config
 @TeleOp
-public class fsm_itd extends OpMode {
+public class intothedeep_tele extends intothedeep_opmode {
 
     public enum TeleState {
         ARM_INTAKE,
@@ -53,117 +47,6 @@ public class fsm_itd extends OpMode {
     }
 
     TeleState telestate = TeleState.INIT;
-
-    FtcDashboard dashboard;
-    static TelemetryPacket packet;
-    Gamepad gamepad1prev = new Gamepad();
-    Gamepad gamepad2prev = new Gamepad();
-    List<LynxModule> bothHubs;
-    VoltageSensor voltageSensor;
-
-    DcMotor rf;
-    DcMotor lf;
-    DcMotor rb;
-    DcMotor lb;
-    DcMotor extendo;
-    DcMotor ls;
-    DcMotor rs;
-    DcMotor ms;
-
-    TouchSensor extendoSlidesLimit;
-    TouchSensor verticalSlidesLimit;
-    TouchSensor carabinerLimit;
-    TouchSensor transferLimit;
-    ColorSensor intakeColor;
-    DistanceSensor leftDS;
-    DistanceSensor rightDS;
-    DistanceSensor outputDS;
-
-    Servo alpha;
-    Servo beta;
-    Servo intakeClaw;
-    Servo intakeWrist;
-    Servo outputClaw;
-    Servo deltaRight;
-    Servo deltaLeft;
-    Servo outputWrist;
-
-    ElapsedTime stateTimer = new ElapsedTime();
-    ElapsedTime slidesTimer = new ElapsedTime(ElapsedTime.Resolution.MILLISECONDS);
-
-    //intake constants
-    public static double intakeClawOpenPos = 0.10;
-    public static double intakeClawClosedPos = 0.47;
-    public static double alphaTransferPos = 0.44;
-    public static double betaTransferPos = 0.44;
-    public static double alphaIntakePos = 0.86;
-    public static double betaIntakePos = 0.86;
-    public static double alphaLowerPos = 0.92;
-    public static double betaLowerPos = 0.92;
-    public static double intakeWristStraightPos = 0.52;
-    public static double intakeWristRightLimit = 0.73;
-    public static double intakeWristLeftLimit = 0.29;
-    public static double intakeWristPos;
-
-    //slides constants
-    public static double slideMin = 0.0;
-    public static double slideMaxEx = 450.0;
-    public static double slideMaxVe = 1950.0;
-    public static double slideSpecimenVe = 560.0;
-    public static double slideHang1Ve = 1300;
-    public static double slideHang2Ve = 1950;
-    double slidePositionTargetEx;
-    double slidePositionTargetVe;
-    double verticalPower;
-    SlidesPID slidesPidExtendo;
-    SlidesPID slidesPidVertical;
-
-    //output constants
-    public static double deltaRightPreTransfer = 0.58;
-    public static double deltaLeftPreTransfer = 0.21;
-    public static double deltaRightTransferPos = 0.63;
-    public static double deltaLeftTransferPos = 0.15;
-    public static double deltaRightSamplePos = 0.45;
-    public static double deltaLeftSamplePos = 0.34;
-    public static double deltaRightSpecimenPos = 0.35;
-    public static double deltaLeftSpecimenPos = 0.20;
-    public static double outputWristStraightPos = 0.90;
-    public static double outputWristSwitchPos = 0.23;
-    public static double outputWristSpecimenPos = 0.30;
-    public static double outputClawClosedPos = 0.48;
-    public static double outputClawOpenPos = 0.76;
-
-    //times
-    final double INTAKELOWER_TIME = 0.10;
-    final double INTAKECLAW_TIME = 0.30;
-    final double OUTPUTCLAW_TIME = 0.10;
-    final double OUTPUTARM_READY = 0.10;
-    final double HANG1_UP_TIME = 2.50;
-    final double HANG2_UP_TIME = 2.50;
-    final double CARABINER_TIME = 1.00;
-
-    //loop constants
-    double timeGap;
-    double loopCumulativeTime = 0.0;
-    double loopCounter = 0.0;
-
-    boolean turtle;
-    boolean carabinerPressed;
-    boolean transferPressed = false;
-    boolean extendoPressed;
-    boolean verticalPressed;
-    boolean sampleOutputState;
-    boolean specimenOutputState;
-    boolean ozoneOutputState;
-    public static double exConstantPID = 0.0;
-    public static double veConstantPID = 0.0;
-    boolean exAddPower = false;
-    boolean veAddPowerDown = false;
-    boolean veAddPowerUp = false;
-    boolean veHangPower = false;
-    boolean outputWristSpecimen = false;
-    double tuningPos1 = 0.5;
-    double tuningPos2 = 0.5;
 
     @Override
     public void init(){
@@ -217,8 +100,6 @@ public class fsm_itd extends OpMode {
 
         /*leftDS = hardwareMap.get(DistanceSensor.class, "leftDS");
         rightDS = hardwareMap.get(DistanceSensor.class, "rightDS");*/
-        //deltaLeft.setDirection(Servo.Direction.REVERSE);
-        //deltaRight.setDirection(Servo.Direction.REVERSE);
 
         outputClaw.setDirection(Servo.Direction.REVERSE);
         beta.setDirection(Servo.Direction.REVERSE);
@@ -258,50 +139,7 @@ public class fsm_itd extends OpMode {
     }
 
     @Override
-    public void loop(){
-        for (LynxModule hub : bothHubs) {
-            hub.clearBulkCache();
-        }
-
-        //bulk read
-        rf.getCurrentPosition();
-        lf.getCurrentPosition();
-        rb.getCurrentPosition();
-        lb.getCurrentPosition();
-        ls.getCurrentPosition();
-        rs.getCurrentPosition();
-        ms.getCurrentPosition();
-        extendo.getCurrentPosition();
-        extendoSlidesLimit.isPressed();
-        verticalSlidesLimit.isPressed();
-        carabinerLimit.isPressed();
-        transferLimit.isPressed();
-
-
-        timeGap = slidesTimer.milliseconds();
-        slidesTimer.reset();
-
-        loopCounter++;
-        loopCumulativeTime += timeGap;
-
-        if (loopCumulativeTime >= 1000) {
-            telemetry.addData("Time per Loop", "Time per Loop: " + loopCumulativeTime/loopCounter);
-            loopCounter = 0.0;
-            loopCumulativeTime = 0.0;
-        }
-
-        extendo.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        extendo.setPower(2.4*slidesPidExtendo.calculatePowerExtendo(slidePositionTargetEx) + exConstantPID);
-        slidesPidExtendo.updateEx(extendo.getCurrentPosition(), timeGap);
-
-        rs.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        ls.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        ms.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        verticalPower = 1.4*slidesPidVertical.calculatePowerVertical(slidePositionTargetVe) + veConstantPID;
-        ls.setPower(verticalPower);
-        ms.setPower(verticalPower);
-        rs.setPower(verticalPower);
-        slidesPidVertical.updateVe((ms.getCurrentPosition()), timeGap);
+    public void childLoop(){
 
         if(exAddPower){
             exConstantPID = -0.4;
@@ -526,11 +364,13 @@ public class fsm_itd extends OpMode {
                 }
                 break;
             case CARABINER:
-                if(stateTimer.seconds() >= CARABINER_TIME){
-                    veHangPower = false;
-                    slidePositionTargetVe = 300;
-                    carabinerPressed = false;
-                    telestate = TeleState.HANG_UP2;
+                if(!carabinerPressed){
+                    veHangPower = true;
+                    slidePositionTargetVe = slideMin;
+                    if(stateTimer.seconds() >= CARABINER_TIME){
+                        veHangPower = false;
+                        telestate = TeleState.HANG_UP2;
+                    }
                 }
                 break;
             case HANG_UP2:
@@ -551,34 +391,6 @@ public class fsm_itd extends OpMode {
                     }
                 }
                 break;
-        }
-
-        if(transferLimit.isPressed()){
-            transferPressed = true;
-        }else{
-            transferPressed = false;
-        }
-
-        if(carabinerLimit.isPressed()){
-            carabinerPressed = true;
-        }
-
-        if(extendoSlidesLimit.isPressed()){
-            extendoPressed = true;
-            extendo.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        }
-        else{
-            extendoPressed = false;
-        }
-
-        if(verticalSlidesLimit.isPressed()){
-            verticalPressed = true;
-            ms.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-            ls.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-            rs.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        }
-        else{
-            verticalPressed = false;
         }
 
         //intake wrist
@@ -684,57 +496,7 @@ public class fsm_itd extends OpMode {
         gamepad1prev.copy(gamepad1);
         gamepad2prev.copy(gamepad2);
 
-        telemetry.addData("carabiner sensor", "carabiner: " + carabinerPressed);
-        telemetry.addData("intake color red", "red: " + intakeColor.red());
-        telemetry.addData("intake color blue", "blue: " + intakeColor.blue());
-        telemetry.addData("intake color green", "green: " + intakeColor.green());
-        telemetry.addData("transferPressed", "transfer pressed: " + transferPressed);
-        //telemetry.addData("outputDS", "outputDS: " + outputDS.getDistance(DistanceUnit.MM));
-        //telemetry.addData("color sensor output blue", "cs blue: " + intakeColor.blue());
-        //telemetry.addData("color sensor output red", "cs red: " + intakeColor.red());
-        //telemetry.addData("color sensor output red", "cs green: " + intakeColor.green());
-        telemetry.addData("battery voltage", "battery voltage: " + voltageSensor.getVoltage());
         telemetry.addData("tele state", "tele state: " + telestate);
-        //telemetry.addData("carabiner pressed", "carabiner pressed: " + carabinerLimit.isPressed());
-        telemetry.addData("intakeWrist position", "intake wrist position: " + intakeWrist.getPosition());
-
-        telemetry.addData("alpha servo position", "alpha servo posotion: " + alpha.getPosition());
-        telemetry.addData("beta servo position", "beta servo position: " + beta.getPosition());
-
-        telemetry.addData("intakeClawPos", "intake claw position: " + intakeClaw.getPosition());
-        telemetry.addData("outputWristPos", "output wrist position: " + outputWrist.getPosition());
-        telemetry.addData("outputClawPos", "out claw position: " + outputClaw.getPosition());
-        telemetry.addData("deltaLeft", "deltaLeft position: " + deltaLeft.getPosition());
-        telemetry.addData("deltaRight", "deltaRight position: " + deltaRight.getPosition());
-
-        telemetry.addData("ms position", "ms position: " + ms.getCurrentPosition());
-        telemetry.addData("rs power", "rs power: " + rs.getPower());
-        telemetry.addData("ls power", "ls power: " + ls.getPower());
-        telemetry.addData("ms power", "ms power: " + ms.getPower());
-        telemetry.addData("Error Vertical", "Error vertical: " + (slidePositionTargetVe - (ms.getCurrentPosition())));
-
-        telemetry.addData("Error Extendo", "Error Extendo: " + (slidePositionTargetEx - extendo.getCurrentPosition()));
-        telemetry.addData("extendo position", "extendo position: " + extendo.getCurrentPosition());
-        telemetry.addData("extendo power", "extendo power: " + extendo.getPower());
-        //telemetry.addData("extendo slides pressed", "extendo slides pressed: " + extendoSlidesLimit.isPressed());
-
-        telemetry.addData("time per loop", timeGap);
-        telemetry.update();
-
-        packet.put("slides target extendo", slidePositionTargetEx);
-        packet.put("slides position extendo", extendo.getCurrentPosition());
-        packet.put("slides power extendo", extendo.getPower());
-        packet.put("extendo kp", "extendo kp" + SlidesPID.KpEx);
-        packet.put("extendo kd", "extendo kd" + SlidesPID.KdEx);
-        packet.put("extendo ki", "extendo ki" + SlidesPID.KiEx);
-
-        packet.put("slides target vertical", slidePositionTargetVe);
-        packet.put("slides position vertical", (ms.getCurrentPosition()));
-        packet.put("slides power extendo", ms.getPower());
-        packet.put("vertical kp", "extendo kp" + SlidesPID.KpVe);
-        packet.put("vertical kd", "extendo kd" + SlidesPID.KdVe);
-        packet.put("vertical ki", "extendo ki" + SlidesPID.KiVe);
-        dashboard.sendTelemetryPacket(packet);
     }
 
     @Override
