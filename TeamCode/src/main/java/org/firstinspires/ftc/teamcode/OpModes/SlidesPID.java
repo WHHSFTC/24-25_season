@@ -1,8 +1,7 @@
-package org.firstinspires.ftc.teamcode.Teles;
+package org.firstinspires.ftc.teamcode.OpModes;
 
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.config.Config;
-import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 
 @Config
 public class SlidesPID {
@@ -18,8 +17,8 @@ public class SlidesPID {
 
 
     public static double KpVe = 0.005;
-    public static double KiVe = 0.0;
-    public static double KdVe = 0.05;
+    public static double KiVe = 0.0000002;
+    public static double KdVe = 0.03;
     private double integralVe = 0.0;
     private double prevVeError = 0.0;
     private double prevTargetVe = 0.0;
