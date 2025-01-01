@@ -67,8 +67,8 @@ abstract public class intothedeep_opmode extends OpMode{
     public static double intakeClawClosedPos = 0.45;
     public static double alphaTransferPos = 0.44;
     public static double betaTransferPos = 0.44;
-    public static double alphaIntakePos = 0.86;
-    public static double betaIntakePos = 0.86;
+    public static double alphaIntakePos = 0.75;
+    public static double betaIntakePos = 0.75;
     public static double alphaLowerPos = 0.92;
     public static double betaLowerPos = 0.92;
     public static double intakeWristStraightPos = 0.52;
@@ -79,7 +79,7 @@ abstract public class intothedeep_opmode extends OpMode{
     //slides constants
     public static double slideMin = 0.0;
     public static double slideMaxEx = 450.0;
-    public static double slideMaxVe = 1400.0;
+    public static double slideMaxVe = 1700.0;
     public static double slideSpecimenVe = 500.0;
     public static double slideHangVe = 900.0;
     public static double swingSizeEx = 120.0;
@@ -130,6 +130,9 @@ abstract public class intothedeep_opmode extends OpMode{
     boolean sampleOutputState;
     boolean specimenOutputState;
     boolean ozoneOutputState;
+    double maxChamberDist = 150;
+    double maxBucketDist = 100;
+    double minSlideSafeDist = 400;
     public static double exConstantPID = 0.0;
     public static double veConstantPID = 0.0;
     boolean exAddPower = false;
@@ -139,6 +142,8 @@ abstract public class intothedeep_opmode extends OpMode{
     boolean outputWristSpecimen = false;
     double tuningPos1 = 0.5;
     double tuningPos2 = 0.5;
+    double colorThreshold = 300;
+    boolean blueAlliance = true;
 
     @Override
     public void init(){
@@ -304,6 +309,9 @@ abstract public class intothedeep_opmode extends OpMode{
         //telemetry.addData("carabiner sensor", "carabiner: " + carabinerPressed);
         //telemetry.addData("transferPressed", "transfer pressed: " + transferPressed);
         telemetry.addData("battery voltage", "battery voltage: " + voltageSensor.getVoltage());
+        telemetry.addData("red", intakeColor.red());
+        telemetry.addData("blue", intakeColor.blue());
+        telemetry.addData("green", intakeColor.green());
         telemetry.addData("intakeWrist position", "intake wrist position: " + intakeWrist.getPosition());
 
         telemetry.addData("alpha servo position", "alpha servo posotion: " + alpha.getPosition());

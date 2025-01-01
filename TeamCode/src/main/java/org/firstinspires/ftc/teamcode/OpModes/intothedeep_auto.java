@@ -22,6 +22,7 @@ public class intothedeep_auto extends intothedeep_opmode{
     @Override
     public void start(){
         super.start();
+        blueAlliance = intakeColor.blue() > intakeColor.red();
     }
 
     @Override

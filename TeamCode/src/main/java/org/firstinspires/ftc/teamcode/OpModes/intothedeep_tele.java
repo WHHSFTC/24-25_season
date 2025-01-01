@@ -1,6 +1,7 @@
 package org.firstinspires.ftc.teamcode.OpModes;
 
 import com.acmerobotics.dashboard.config.Config;
+import com.qualcomm.hardware.rev.RevColorSensorV3;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.PwmControl;
@@ -65,6 +66,17 @@ public class intothedeep_tele extends intothedeep_opmode {
         deltaRight.setPosition(deltaRightPreTransfer);
         springToggle.setPosition(springToggleOffPos);
     }
+
+    public boolean isCorrectColor(RevColorSensorV3 sensorOutput) {
+        if(blueAlliance) {
+            if(!sampleOutputState) return sensorOutput.blue() > 0.8 * colorThreshold && sensorOutput.red() < colorThreshold && sensorOutput.green() < colorThreshold;
+            return sensorOutput.red() < sensorOutput.green() || sensorOutput.red() < sensorOutput.blue();
+        }
+        if(!sampleOutputState) return sensorOutput.blue() < 0.8 * colorThreshold && sensorOutput.red() > colorThreshold && sensorOutput.green() < colorThreshold;
+        return sensorOutput.blue() < sensorOutput.green() || sensorOutput.blue() < sensorOutput.red();
+    }
+
+
 
     @Override
     public void childLoop(){
@@ -133,13 +145,12 @@ public class intothedeep_tele extends intothedeep_opmode {
                     intakeClaw.setPosition(intakeClawClosedPos);
                     telestate = TeleState.BRING_IN;
                     stateTimer.reset();
-
                 }
                 break;
             case BRING_IN:
                 veAddPowerDown = false;
                 if(stateTimer.seconds() >= INTAKECLAW_TIME){
-                    if(intakeColor.blue() > 300 || intakeColor.red() > 300 || intakeColor.green() > 300) {
+                    if(isCorrectColor(intakeColor)) {
                         exAddPower = true;
                         slidePositionTargetEx = slideMin;
                         intakeWrist.setPosition(intakeWristStraightPos);
@@ -163,7 +174,7 @@ public class intothedeep_tele extends intothedeep_opmode {
                 break;
             case OUTPUTARM_TRANSFER:
                 if(transferPressed && extendoPressed){
-                    if(intakeColor.blue() > 300 || intakeColor.red() > 300 || intakeColor.green() > 300){
+                    if(isCorrectColor(intakeColor)){
                         exAddPower = false;
                         deltaLeft.setPosition(deltaLeftTransferPos);
                         deltaRight.setPosition(deltaRightTransferPos);
@@ -232,7 +243,7 @@ public class intothedeep_tele extends intothedeep_opmode {
                 }
                 break;
             case SPECIMEN_OUTPUT:
-                if(chamberDS.getDistance(DistanceUnit.MM) < 150){
+                if(chamberDS.getDistance(DistanceUnit.MM) < maxChamberDist){
                     outputWrist.setPosition(outputWristSwitchPos);
                     slidePositionTargetVe += 250;
                     outputClaw.setPwmRange(new PwmControl.PwmRange(500,1000));
@@ -263,7 +274,6 @@ public class intothedeep_tele extends intothedeep_opmode {
                     stateTimer.reset();
                 }
                 break;
-
             case OZONE_RETRACTTWO:
                 if(stateTimer.seconds() >= INTAKECLAW_TIME){
                     exAddPower = true;
@@ -274,7 +284,6 @@ public class intothedeep_tele extends intothedeep_opmode {
                     telestate = TeleState.INIT;
                 }
                 break;
-
             case OUTPUTCLAWSPECIMEN_OPEN:
                 if(gamepad1.a && !gamepad1prev.a){
                     outputClaw.setPwmRange(new PwmControl.PwmRange(500,2500));
@@ -284,7 +293,7 @@ public class intothedeep_tele extends intothedeep_opmode {
                 }
                 break;
             case OUTPUTCLAW_OPEN:
-                if(gamepad1.a && !gamepad1prev.a || outputDS.getDistance(DistanceUnit.MM) < 100){
+                if(gamepad1.a && !gamepad1prev.a || outputDS.getDistance(DistanceUnit.MM) < maxBucketDist){
                     outputClaw.setPosition(outputClawOpenPos);
                     telestate = TeleState.RESET;
                     stateTimer.reset();
@@ -304,7 +313,7 @@ public class intothedeep_tele extends intothedeep_opmode {
                 }
                 break;
             case RESET:
-                if(stateTimer.seconds() >= 0.45 && outputDS.getDistance(DistanceUnit.MM) > 400){
+                if(stateTimer.seconds() >= 0.45 && outputDS.getDistance(DistanceUnit.MM) > minSlideSafeDist){
                     outputWrist.setPosition(outputWristStraightPos);
                     deltaLeft.setPosition(deltaLeftPreTransfer);
                     deltaRight.setPosition(deltaRightPreTransfer);
@@ -318,12 +327,14 @@ public class intothedeep_tele extends intothedeep_opmode {
                 break;
             case HANG_UP1:
                 springToggle.setPosition(springToggleOnPos);
-                slidePositionTargetVe = slideHangVe;
-                telestate = TeleState.HANG_DOWN1;
-                stateTimer.reset();
+                if(stateTimer.seconds() > 0.4) {
+                    slidePositionTargetVe = slideHangVe;
+                    telestate = TeleState.HANG_DOWN1;
+                    stateTimer.reset();
+                }
                 break;
             case HANG_DOWN1:
-                if(ms.getCurrentPosition() > 850.0){
+                if(ms.getCurrentPosition() > 850.0 && !gamepad1.dpad_up && chamberDS.getDistance(DistanceUnit.MM) < maxChamberDist){
                     veHangPower = true;
                     slidePositionTargetVe = slideMin;
                     if(carabinerPressed){
@@ -344,25 +355,17 @@ public class intothedeep_tele extends intothedeep_opmode {
                 }
                 break;
             case HANG_UP2:
-                if(extendo.getCurrentPosition() > 100){
+                if(extendo.getCurrentPosition() > 100 && ms.getCurrentPosition() > 1700){
                     slidePositionTargetEx = 0;
-                    slidePositionTargetVe = slideHangVe;
+                    slidePositionTargetVe = slideMaxVe;
                     telestate = TeleState.HANG_DOWN2;
                     stateTimer.reset();
                 }
                 break;
             case HANG_DOWN2:
-                if(ms.getCurrentPosition() > 850.0){
+                if(extendo.getCurrentPosition() < 5){
                     veHangPower = true;
                     slidePositionTargetVe = slideMin;
-                    if(carabinerPressed){
-                        telestate = TeleState.CARABINER;
-                        stateTimer.reset();
-                    } else if(verticalSlidesLimit.isPressed()) {
-                        veHangPower = false;
-                        telestate = TeleState.HANG_UP2;
-                        stateTimer.reset();
-                    }
                 }
                 break;
         }
@@ -399,6 +402,7 @@ public class intothedeep_tele extends intothedeep_opmode {
         //hang
         if(gamepad1.dpad_up && !gamepad1prev.dpad_up){
             telestate = TeleState.HANG_UP1;
+            stateTimer.reset();
         }
 
         //tuning positions
