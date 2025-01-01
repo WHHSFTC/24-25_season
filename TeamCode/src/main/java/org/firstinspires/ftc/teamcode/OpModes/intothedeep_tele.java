@@ -334,15 +334,11 @@ public class intothedeep_tele extends intothedeep_opmode {
                 }
                 break;
             case HANG_DOWN1:
-                if(ms.getCurrentPosition() > 850.0 && !gamepad1.dpad_up && chamberDS.getDistance(DistanceUnit.MM) < maxChamberDist){
+                if(veHangPower || ms.getCurrentPosition() > 850.0 && !gamepad1.dpad_up && chamberDS.getDistance(DistanceUnit.MM) < maxChamberDist){
                     veHangPower = true;
                     slidePositionTargetVe = slideMin;
-                    if(carabinerPressed){
+                    if(carabinerPressed || verticalSlidesLimit.isPressed()){
                         telestate = TeleState.CARABINER;
-                        stateTimer.reset();
-                    } else if(verticalSlidesLimit.isPressed()) {
-                        veHangPower = false;
-                        telestate = TeleState.HANG_UP1;
                         stateTimer.reset();
                     }
                 }
@@ -351,19 +347,24 @@ public class intothedeep_tele extends intothedeep_opmode {
                 if(!carabinerPressed){
                     veHangPower = false;
                     slidePositionTargetEx = swingSizeEx;
+                    alpha.setPosition(alphaLowerPos);
+                    beta.setPosition(betaLowerPos);
+                    slidePositionTargetVe = slideMaxVe;
                     telestate = TeleState.HANG_UP2;
                 }
                 break;
             case HANG_UP2:
-                if(extendo.getCurrentPosition() > 100 && ms.getCurrentPosition() > 1700){
-                    slidePositionTargetEx = 0;
+                if(extendo.getCurrentPosition() > swingSizeEx - 15 && ms.getCurrentPosition() > slideMaxVe - 30){
+                    slidePositionTargetEx = slideMin;
+                    alpha.setPosition(alphaTransferPos);
+                    beta.setPosition(betaTransferPos);
                     slidePositionTargetVe = slideMaxVe;
                     telestate = TeleState.HANG_DOWN2;
                     stateTimer.reset();
                 }
                 break;
             case HANG_DOWN2:
-                if(extendo.getCurrentPosition() < 5){
+                if(extendo.getCurrentPosition() < slideMin + 15){
                     veHangPower = true;
                     slidePositionTargetVe = slideMin;
                 }
