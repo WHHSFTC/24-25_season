@@ -45,9 +45,9 @@ abstract public class intothedeep_opmode extends OpMode{
     TouchSensor verticalSlidesLimit;
     TouchSensor carabinerLimit;
     TouchSensor transferLimit;
-    RevColorSensorV3 intakeColor;
     DistanceSensor chamberDS;
     DistanceSensor outputDS;
+    RevColorSensorV3 intakeColor;
 
     Servo alpha;
     Servo beta;
@@ -64,24 +64,25 @@ abstract public class intothedeep_opmode extends OpMode{
 
     //intake constants
     public static double intakeClawOpenPos = 0.10;
-    public static double intakeClawClosedPos = 0.45;
-    public static double alphaTransferPos = 0.44;
-    public static double betaTransferPos = 0.44;
-    public static double alphaIntakePos = 0.81;
-    public static double betaIntakePos = 0.81;
-    public static double alphaLowerPos = 0.92;
-    public static double betaLowerPos = 0.92;
+    public static double intakeClawClosedPos = 0.48;
+    public static double alphaTransferPos = 0.52;
+    public static double betaTransferPos = 0.52;
+    public static double alphaIntakePos = 0.95;
+    public static double betaIntakePos = 0.95;
+    public static double alphaLowerPos = 1.0;
+    public static double betaLowerPos = 1.0;
     public static double intakeWristStraightPos = 0.52;
     public static double intakeWristRightLimit = 0.73;
     public static double intakeWristLeftLimit = 0.29;
     public static double intakeWristPos;
 
     //slides constants
-    public static double slideMin = 0.0;
+    public static double slideMinEx = -10.0;
+    public static double slideMinVe = -5.0;
     public static double slideMaxEx = 450.0;
-    public static double slideMaxVe = 1600.0;
-    public static double slideSpecimenVe = 500.0;
-    public static double slideHangVe = 900.0;
+    public static double slideMaxVe = 1830.0;
+    public static double slideSpecimenVe = 400.0;
+    public static double slideHangVe = 1300.0;
     public static double swingSizeEx = 120.0;
     public static double slidePositionTargetEx;
     public static double slidePositionTargetVe;
@@ -90,12 +91,12 @@ abstract public class intothedeep_opmode extends OpMode{
     SlidesPID slidesPidVertical;
 
     //output constants
-    public static double deltaRightPreTransfer = 0.59;
-    public static double deltaLeftPreTransfer = 0.22;
+    public static double deltaRightPreTransfer = 0.62;
+    public static double deltaLeftPreTransfer = 0.24;
     public static double deltaRightTransferPos = 0.66;
-    public static double deltaLeftTransferPos = 0.15;
-    public static double deltaRightSamplePos = 0.44;
-    public static double deltaLeftSamplePos = 0.37;
+    public static double deltaLeftTransferPos = 0.20;
+    public static double deltaRightSamplePos = 0.50;
+    public static double deltaLeftSamplePos = 0.38;
     public static double deltaRightSpecimenPos = 0.28;
     public static double deltaLeftSpecimenPos = 0.27;
     public static double outputWristStraightPos = 0.90;
@@ -109,10 +110,10 @@ abstract public class intothedeep_opmode extends OpMode{
     public static double springToggleOffPos = 0.94;
 
     //times
-    final double INTAKELOWER_TIME = 0.10;
+    final double INTAKELOWER_TIME = 0.04;
     final double INTAKECLAW_TIME = 0.35;
-    final double OUTPUTCLAW_TIME = 0.20;
-    final double OUTPUTARM_READY = 0.10;
+    final double OUTPUTCLAW_TIME = 0.30;
+    final double OUTPUTARM_READY = 0.05;
     final double HANG1_UP_TIME = 2.50;
     final double HANG2_UP_TIME = 2.50;
     final double CARABINER_TIME = 1.00;
@@ -137,13 +138,12 @@ abstract public class intothedeep_opmode extends OpMode{
     public static double veConstantPID = 0.0;
     boolean exAddPower = false;
     boolean veAddPowerDown = false;
-    boolean veAddPowerUp = false;
     boolean veHangPower = false;
     boolean outputWristSpecimen = false;
     double tuningPos1 = 0.5;
     double tuningPos2 = 0.5;
     double colorThreshold = 300;
-    boolean blueAlliance = true;
+    boolean blueAlliance;
 
     @Override
     public void init(){
@@ -171,6 +171,10 @@ abstract public class intothedeep_opmode extends OpMode{
         ls.setDirection(DcMotorSimple.Direction.REVERSE);
         rs.setDirection(DcMotorSimple.Direction.REVERSE);
 
+        rs.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        ls.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        ms.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+
         alpha = hardwareMap.get(Servo.class, "alpha");
         beta = hardwareMap.get(Servo.class, "beta");
         intakeClaw = hardwareMap.get(Servo.class, "intakeClaw");
@@ -185,19 +189,15 @@ abstract public class intothedeep_opmode extends OpMode{
         lf.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         rb.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         lb.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        extendo.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        ls.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        ms.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        rs.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
 
         extendoSlidesLimit = hardwareMap.get(TouchSensor.class, "extendoSlidesLimit");
         verticalSlidesLimit = hardwareMap.get(TouchSensor.class, "verticalSlidesLimit");
         carabinerLimit = hardwareMap.get(TouchSensor.class, "carabinerLimit");
         transferLimit = hardwareMap.get(TouchSensor.class, "transferLimit");
-        intakeColor = hardwareMap.get(RevColorSensorV3.class, "intakeColor");
         outputDS = hardwareMap.get(DistanceSensor.class, "outputDS");
         chamberDS = hardwareMap.get(DistanceSensor.class, "chamberDS");
 
+        intakeColor = hardwareMap.get(RevColorSensorV3.class, "colorsensor");
         outputClaw.setDirection(Servo.Direction.REVERSE);
         beta.setDirection(Servo.Direction.REVERSE);
 
@@ -218,12 +218,10 @@ abstract public class intothedeep_opmode extends OpMode{
 
     @Override
     public void start(){
-        slidePositionTargetEx = 0.0;
-        slidePositionTargetVe = 0.0;
-        extendo.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        ls.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        ms.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        rs.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        extendo.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        ms.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        rs.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        ls.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
     }
 
     @Override
@@ -260,17 +258,25 @@ abstract public class intothedeep_opmode extends OpMode{
         }
 
         extendo.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        extendo.setPower(2.4*slidesPidExtendo.calculatePowerExtendo(slidePositionTargetEx) + exConstantPID);
-        slidesPidExtendo.updateEx(extendo.getCurrentPosition(), timeGap);
-
         rs.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         ls.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         ms.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        verticalPower = 2.0*slidesPidVertical.calculatePowerVertical(slidePositionTargetVe) + veConstantPID;
-        ls.setPower(verticalPower);
-        ms.setPower(verticalPower);
-        rs.setPower(verticalPower);
-        slidesPidVertical.updateVe((ms.getCurrentPosition()), timeGap);
+
+        if(exAddPower){
+            exConstantPID = -0.5;
+        }else{
+            exConstantPID = 0.0;
+        }
+
+        if(veAddPowerDown){
+            veConstantPID = -0.4;
+        }else{
+            veConstantPID = 0.0;
+        }
+
+        if(veHangPower){
+            veConstantPID = -0.2;
+        }
 
         if(transferLimit.isPressed()){
             transferPressed = true;
@@ -285,33 +291,35 @@ abstract public class intothedeep_opmode extends OpMode{
             carabinerPressed = false;
         }
 
-        if(extendoSlidesLimit.isPressed()){
-            extendoPressed = true;
-            extendo.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        }
-        else{
-            extendoPressed = false;
+        if(slidePositionTargetEx < -10){
+            slidePositionTargetEx = -10;
         }
 
-        if(verticalSlidesLimit.isPressed()){
-            verticalPressed = true;
-            ms.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-            ls.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-            rs.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        if(slidePositionTargetEx > slideMaxEx){
+            slidePositionTargetEx = slideMaxEx;
         }
-        else{
-            verticalPressed = false;
+
+        if(slidePositionTargetVe < -5){
+            slidePositionTargetVe = -5;
+        }
+
+        if(slidePositionTargetVe > slideMaxVe){
+            slidePositionTargetVe = slideMaxVe;
+        }
+
+        if(extendoSlidesLimit.isPressed()){
+            extendo.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+            exAddPower = false;
+            slideMinEx = 0.0;
         }
 
         childLoop();
 
         /*telemetry.addData("spring toggle", "spring toggle: " + springToggle.getPosition());*/
         //telemetry.addData("carabiner sensor", "carabiner: " + carabinerPressed);
-        //telemetry.addData("transferPressed", "transfer pressed: " + transferPressed);
+        telemetry.addData("transferPressed", transferLimit.isPressed());
+        telemetry.addData("extendo limit pressed", extendoSlidesLimit.isPressed());
         telemetry.addData("battery voltage", "battery voltage: " + voltageSensor.getVoltage());
-        telemetry.addData("red", intakeColor.red());
-        telemetry.addData("blue", intakeColor.blue());
-        telemetry.addData("green", intakeColor.green());
         telemetry.addData("intakeWrist position", "intake wrist position: " + intakeWrist.getPosition());
 
         telemetry.addData("alpha servo position", "alpha servo posotion: " + alpha.getPosition());
