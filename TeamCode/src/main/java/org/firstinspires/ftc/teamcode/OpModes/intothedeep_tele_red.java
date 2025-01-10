@@ -6,6 +6,7 @@ import com.acmerobotics.dashboard.config.Config;
 import com.qualcomm.hardware.rev.RevColorSensorV3;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.ColorSensor;
+import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.PwmControl;
 
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
@@ -55,14 +56,14 @@ public class intothedeep_tele_red extends intothedeep_opmode {
     TeleState telestate = TeleState.INIT;
     RevColorSensorV3 intakeColor;
 
-    double slideTargetGainEx = 20;
-    double slideTargetGainVe = 20;
+    double slideTargetGainEx = 110;
+    double slideTargetGainVe = 30;
 
     @Override
     public void init(){
         super.init();
+
         intakeColor = hardwareMap.get(RevColorSensorV3.class, "colorsensor");
-        intakeColor.enableLed(false);
     }
 
     @Override
@@ -78,31 +79,35 @@ public class intothedeep_tele_red extends intothedeep_opmode {
         deltaRight.setPosition(deltaRightPreTransfer);
         springToggle.setPosition(springToggleOffPos);
         blueAlliance = false;
-        slidePositionTargetEx = -20.0;
     }
 
     public boolean isCorrectColor(ColorSensor sensorOutput) {
-        /*if(blueAlliance) {
-            if(specimenOutputState || ozoneOutputState){
-                return sensorOutput.blue() > 0.8 * colorThreshold && sensorOutput.red() < colorThreshold &&
-                        sensorOutput.green() < colorThreshold * 1.5;
-            }
-            if(sampleOutputState){
-                return (sensorOutput.blue() > colorThreshold || sensorOutput.green() > colorThreshold)
-                        && (sensorOutput.red() < sensorOutput.green() || sensorOutput.red() < sensorOutput.blue());
-            }
+        if(gamepad2.dpad_left && gamepad2prev.dpad_left){
+            return true;
         }
-        else {
-            if (specimenOutputState || ozoneOutputState) {
-                return sensorOutput.blue() < 0.8 * colorThreshold
-                        && sensorOutput.red() > colorThreshold && sensorOutput.green() < colorThreshold;
+        else{
+            if(blueAlliance) {
+                if(specimenOutputState || ozoneOutputState){
+                    return sensorOutput.blue() > 0.6 * colorThreshold && sensorOutput.red() < colorThreshold * 1.5 &&
+                            sensorOutput.green() < colorThreshold * 1.5;
+                }
+                if(sampleOutputState){
+                    return (sensorOutput.blue() > colorThreshold || sensorOutput.green() > colorThreshold)
+                            && (sensorOutput.red() < sensorOutput.green() || sensorOutput.red() < sensorOutput.blue());
+                }
             }
-            if(sampleOutputState){
-                return (sensorOutput.red() > colorThreshold || sensorOutput.green() > colorThreshold)
-                        && sensorOutput.blue() < sensorOutput.green() || sensorOutput.blue() < sensorOutput.red();
+            else {
+                if (specimenOutputState || ozoneOutputState) {
+                    return sensorOutput.blue() < 0.6 * colorThreshold
+                            && sensorOutput.red() > colorThreshold * 1.5 && sensorOutput.green() < colorThreshold * 1.5;
+                }
+                if(sampleOutputState){
+                    return (sensorOutput.red() > colorThreshold || sensorOutput.green() > colorThreshold)
+                            && sensorOutput.blue() < sensorOutput.green() || sensorOutput.blue() < sensorOutput.red();
+                }
             }
-        }*/
-        return true;
+            return true;
+        }
     }
 
     @Override
@@ -119,7 +124,7 @@ public class intothedeep_tele_red extends intothedeep_opmode {
         slidesPidVertical.updateVe((ms.getCurrentPosition()), timeGap);
 
         if(exAddPower){
-            exConstantPID = -0.5;
+            exConstantPID = -0.7;
         }else{
             exConstantPID = 0.0;
         }
@@ -131,7 +136,7 @@ public class intothedeep_tele_red extends intothedeep_opmode {
         }
 
         if(veHangPower){
-            veConstantPID = -1.0;
+            veConstantPID = 0.5;
         }
 
         switch(telestate){
@@ -218,7 +223,7 @@ public class intothedeep_tele_red extends intothedeep_opmode {
                 }
                 break;
             case OUTPUTARM_TRANSFER:
-                if(/*transferLimit.isPressed() && */extendoSlidesLimit.isPressed()){
+                if(extendoSlidesLimit.isPressed()){
                     if(isCorrectColor(intakeColor)){
                         exAddPower = false;
                         deltaLeft.setPosition(deltaLeftTransferPos);
@@ -272,7 +277,7 @@ public class intothedeep_tele_red extends intothedeep_opmode {
                 break;
             case OUTPUT_SPECIMEN:
                 veAddPowerDown = false;
-                slidePositionTargetVe = 750;
+                slidePositionTargetVe = 650;
                 deltaLeft.setPosition(deltaLeftSpecimenPos);
                 deltaRight.setPosition(deltaRightSpecimenPos);
                 outputWrist.setPosition(outputWristSpecimenPos);
@@ -290,8 +295,8 @@ public class intothedeep_tele_red extends intothedeep_opmode {
                 break;
             case SPECIMEN_OUTPUT:
                 if(chamberDS.getDistance(DistanceUnit.MM) < maxChamberDist){
-                    outputWrist.setPosition(outputWristSwitchPos);
-                    slidePositionTargetVe += 250;
+                    outputWrist.setPosition(0.10);
+                    slidePositionTargetVe += 200;
                     outputClaw.setPwmRange(new PwmControl.PwmRange(500,1000));
                     telestate = TeleState.OUTPUTCLAWSPECIMEN_OPEN;
                 }
@@ -306,6 +311,7 @@ public class intothedeep_tele_red extends intothedeep_opmode {
                 break;
             case OZONE_EXTEND:
                 if(!gamepad2.b && gamepad2prev.b){
+                    exAddPower = false;
                     slidePositionTargetEx = slideMaxEx;
                     alpha.setPosition(alphaIntakePos);
                     beta.setPosition(betaIntakePos);
@@ -314,7 +320,7 @@ public class intothedeep_tele_red extends intothedeep_opmode {
                 }
                 break;
             case DROP_OZONE:
-                if(extendo.getCurrentPosition() > 400){
+                if(extendo.getCurrentPosition() > 350){
                     intakeClaw.setPosition(intakeClawOpenPos);
                     telestate = TeleState.OZONE_RETRACTTWO;
                     stateTimer.reset();
@@ -372,17 +378,21 @@ public class intothedeep_tele_red extends intothedeep_opmode {
                 }
                 break;
             case HANG_UP1:
-                springToggle.setPosition(springToggleOnPos);
+                springToggle.setPosition(springToggleOffPos);
                 if(stateTimer.seconds() > 0.4) {
+                    alpha.setPosition(alphaTransferPos);
+                    beta.setPosition(betaTransferPos);
                     slidePositionTargetVe = slideHangVe;
+                    slidePositionTargetEx = slideMinEx;
                     telestate = TeleState.HANG_DOWN1;
                     stateTimer.reset();
                 }
                 break;
             case HANG_DOWN1:
-                if(veHangPower || ms.getCurrentPosition() > 850.0 && !gamepad1.dpad_up && chamberDS.getDistance(DistanceUnit.MM) < maxChamberDist){
+                if(veHangPower || ms.getCurrentPosition() > 750.0 && !gamepad1.dpad_up && stateTimer.seconds() > 0.8){
                     veHangPower = true;
-                    slidePositionTargetVe = slideMinVe;
+                    slidePositionTargetVe = 300;
+                    slidePositionTargetEx = slideMinEx;
                     exAddPower = true;
                     if(carabinerPressed || verticalSlidesLimit.isPressed()){
                         telestate = TeleState.CARABINER;
@@ -397,7 +407,6 @@ public class intothedeep_tele_red extends intothedeep_opmode {
                     slidePositionTargetEx = swingSizeEx;
                     alpha.setPosition(alphaLowerPos);
                     beta.setPosition(betaLowerPos);
-                    telestate = TeleState.HANG_UP2;
                     stateTimer.reset();
                 }
                 break;
@@ -464,14 +473,33 @@ public class intothedeep_tele_red extends intothedeep_opmode {
         }
 
         if(Math.abs(gamepad2.left_stick_y) > 0.3){
+            if(gamepad2.left_stick_y > 0){
+                exAddPower = true;
+            }else{
+                exAddPower = false;
+            }
             slidePositionTargetEx -= slideTargetGainEx * gamepad2.left_stick_y;
-            exAddPower = false;
         }
 
         if(Math.abs(gamepad2.right_stick_y) > 0.3){
+            if(gamepad2.right_stick_y > 0){
+                veAddPowerDown = true;
+            }else{
+                veAddPowerDown = false;
+            }
             slidePositionTargetVe -= slideTargetGainVe * gamepad2.right_stick_y;
-            veAddPowerDown = false;
         }
+
+        if(gamepad2.dpad_down && gamepad2prev.dpad_down){
+            extendo.setPower(-1.0);
+        }
+
+        if(gamepad1.dpad_right && !gamepad1prev.dpad_right){
+            telestate = TeleState.OUTPUTCLAWSPECIMEN_OPEN;
+        }
+
+
+
         //tuning positions
         /*if(gamepad2.dpad_right){
             tuningPos1 += 0.01;
@@ -541,9 +569,6 @@ public class intothedeep_tele_red extends intothedeep_opmode {
         gamepad1prev.copy(gamepad1);
         gamepad2prev.copy(gamepad2);
 
-        //telemetry.addData("cs blue", intakeColor.blue());
-        //telemetry.addData("cs green", intakeColor.green());
-        //telemetry.addData("cs red", intakeColor.red());
         telemetry.addData("tele state", "tele state: " + telestate);
         telemetry.addData("correct color", isCorrectColor(intakeColor));
     }

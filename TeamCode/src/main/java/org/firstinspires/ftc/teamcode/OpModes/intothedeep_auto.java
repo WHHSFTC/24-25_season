@@ -65,11 +65,11 @@ public class intothedeep_auto extends OpMode {
 
     //intake constants
     public static double intakeClawOpenPos = 0.10;
-    public static double intakeClawClosedPos = 0.45;
+    public static double intakeClawClosedPos = 0.48;
     public static double alphaTransferPos = 0.52;
     public static double betaTransferPos = 0.52;
-    public static double alphaIntakePos = 0.92;
-    public static double betaIntakePos = 0.92;
+    public static double alphaIntakePos = 0.95;
+    public static double betaIntakePos = 0.95;
     public static double alphaLowerPos = 1.0;
     public static double betaLowerPos = 1.0;
     public static double intakeWristStraightPos = 0.52;
@@ -78,12 +78,12 @@ public class intothedeep_auto extends OpMode {
     public static double intakeWristPos;
 
     //slides constants
-    public static double slideMinEx = -20.0;
+    public static double slideMinEx = -10.0;
     public static double slideMinVe = -5.0;
     public static double slideMaxEx = 450.0;
     public static double slideMaxVe = 1830.0;
     public static double slideSpecimenVe = 400.0;
-    public static double slideHangVe = 1500.0;
+    public static double slideHangVe = 1300.0;
     public static double swingSizeEx = 120.0;
     public static double slidePositionTargetEx;
     public static double slidePositionTargetVe;
@@ -92,12 +92,12 @@ public class intothedeep_auto extends OpMode {
     SlidesPID slidesPidVertical;
 
     //output constants
-    public static double deltaRightPreTransfer = 0.58;
-    public static double deltaLeftPreTransfer = 0.23;
-    public static double deltaRightTransferPos = 0.64;
-    public static double deltaLeftTransferPos = 0.17;
-    public static double deltaRightSamplePos = 0.44;
-    public static double deltaLeftSamplePos = 0.37;
+    public static double deltaRightPreTransfer = 0.62;
+    public static double deltaLeftPreTransfer = 0.24;
+    public static double deltaRightTransferPos = 0.66;
+    public static double deltaLeftTransferPos = 0.20;
+    public static double deltaRightSamplePos = 0.50;
+    public static double deltaLeftSamplePos = 0.38;
     public static double deltaRightSpecimenPos = 0.28;
     public static double deltaLeftSpecimenPos = 0.27;
     public static double outputWristStraightPos = 0.90;
@@ -106,6 +106,7 @@ public class intothedeep_auto extends OpMode {
     public static double outputClawClosedPos = 0.48;
     public static double outputClawOpenPos = 0.76;
 
+    //hang constants
     public static double springToggleOnPos = 0.58;
     public static double springToggleOffPos = 0.94;
 
@@ -217,19 +218,20 @@ public class intothedeep_auto extends OpMode {
 
     }
 
-    public class VertSlides implements Action {
+    public class VertSlides implements Action{
         double slidePosTargetVe;
         double vertPower;
         ElapsedTime timer = new ElapsedTime();
         double timeSlides;
         boolean veAddPowerDown;
+
         public VertSlides(double slideVePos, boolean addPower){
             slidePosTargetVe = slideVePos;
             veAddPowerDown = addPower;
         }
 
         @Override
-        public boolean run(@NonNull TelemetryPacket telemetryPacket) {
+        public boolean run(@NonNull TelemetryPacket telemetryPacket){
 
             if(veAddPowerDown){
                 veConstantPID = -0.4;
@@ -241,37 +243,25 @@ public class intothedeep_auto extends OpMode {
             ms.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
             rs.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
             ls.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-            slidesPidVertical.updateVeAuto((ms.getCurrentPosition()), timeSlides);
+            slidesPidVertical.updateVeAuto(ms.getCurrentPosition(), timeSlides);
             vertPower = 2.0*slidesPidVertical.autoCalculatePowerVertical(slidePosTargetVe) + veConstantPID;
             ls.setPower(vertPower);
-            ms.setPower(vertPower);
             rs.setPower(vertPower);
+            ms.setPower(vertPower);
 
             double veDifference = Math.abs(slidePosTargetVe - ms.getCurrentPosition());
             boolean veThreshold = veDifference > 8;
 
-            /*packet.put("vetarget", slidePosTargetVe);
-            packet.put("veactual", ms.getCurrentPosition());
-            packet.put("difference", veDifference);
-            packet.put("threshold",veThreshold);
-            packet.put("timegap", timer);
-            packet.put("vepower", ms.getPower());
-            dashboard.sendTelemetryPacket(packet);*/
-
             timer.reset();
 
-            if(veThreshold){
-                return true;
-            }
-            else{
-                return false;
-            }
+            return veThreshold;
         }
     }
 
-    public Action vertslides(double slideVePos, boolean addPower) {
+    public Action vertslides(double slideVePos, boolean addPower){
         return new VertSlides(slideVePos, addPower);
     }
+
 
     public class ExtendoSlides implements Action {
         double slidePosTargetEx;
@@ -312,12 +302,12 @@ public class intothedeep_auto extends OpMode {
 
             timer.reset();
 
-            if(exThreshold){
-                return true;
+            if(extendoSlidesLimit.isPressed()){
+                extendo.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
             }
-            else{
-                return false;
-            }
+
+            return false;
+
         }
     }
 
@@ -410,13 +400,7 @@ public class intothedeep_auto extends OpMode {
         @Override
         public boolean run(@NonNull TelemetryPacket telemetryPacket) {
             intakeClaw.setPosition(iClawPos);
-            if(intakeClawTimer.seconds() > 0.35){
-                intakeClawTimer.reset();
-                return false;
-            }
-            else{
-                return true;
-            }
+            return false;
         }
     }
 
@@ -468,7 +452,7 @@ public class intothedeep_auto extends OpMode {
         return new InstantAction(()->{
                 deltaLeft.setPosition(deltaLeftTransferPos);
                 deltaRight.setPosition(deltaRightTransferPos);
-                new SleepAction(0.2);
+                new SleepAction(0.4);
                 outputClaw.setPosition(outputClawClosedPos);
                 new SleepAction(0.4);
                 intakeClaw.setPosition(intakeClawOpenPos);

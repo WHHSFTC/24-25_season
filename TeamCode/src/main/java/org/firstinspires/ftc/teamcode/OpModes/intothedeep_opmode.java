@@ -47,7 +47,6 @@ abstract public class intothedeep_opmode extends OpMode{
     TouchSensor transferLimit;
     DistanceSensor chamberDS;
     DistanceSensor outputDS;
-    RevColorSensorV3 intakeColor;
 
     Servo alpha;
     Servo beta;
@@ -77,7 +76,7 @@ abstract public class intothedeep_opmode extends OpMode{
     public static double intakeWristPos;
 
     //slides constants
-    public static double slideMinEx = -10.0;
+    public static double slideMinEx = 0.0;
     public static double slideMinVe = -5.0;
     public static double slideMaxEx = 450.0;
     public static double slideMaxVe = 1830.0;
@@ -197,11 +196,9 @@ abstract public class intothedeep_opmode extends OpMode{
         outputDS = hardwareMap.get(DistanceSensor.class, "outputDS");
         chamberDS = hardwareMap.get(DistanceSensor.class, "chamberDS");
 
-        intakeColor = hardwareMap.get(RevColorSensorV3.class, "colorsensor");
         outputClaw.setDirection(Servo.Direction.REVERSE);
         beta.setDirection(Servo.Direction.REVERSE);
 
-        slidePositionTargetEx = 0.0;
         slidePositionTargetVe = 0.0;
 
         turtle = false;
@@ -291,8 +288,8 @@ abstract public class intothedeep_opmode extends OpMode{
             carabinerPressed = false;
         }
 
-        if(slidePositionTargetEx < -10){
-            slidePositionTargetEx = -10;
+        if(slidePositionTargetEx < -5){
+            slidePositionTargetEx = -5;
         }
 
         if(slidePositionTargetEx > slideMaxEx){
@@ -317,8 +314,6 @@ abstract public class intothedeep_opmode extends OpMode{
 
         /*telemetry.addData("spring toggle", "spring toggle: " + springToggle.getPosition());*/
         //telemetry.addData("carabiner sensor", "carabiner: " + carabinerPressed);
-        telemetry.addData("transferPressed", transferLimit.isPressed());
-        telemetry.addData("extendo limit pressed", extendoSlidesLimit.isPressed());
         telemetry.addData("battery voltage", "battery voltage: " + voltageSensor.getVoltage());
         telemetry.addData("intakeWrist position", "intake wrist position: " + intakeWrist.getPosition());
 

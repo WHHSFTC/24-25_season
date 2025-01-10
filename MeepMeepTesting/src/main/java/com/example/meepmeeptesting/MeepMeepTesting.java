@@ -1,5 +1,6 @@
 package com.example.meepmeeptesting;
 
+import com.acmerobotics.roadrunner.ParallelAction;
 import com.acmerobotics.roadrunner.Pose2d;
 
 import com.acmerobotics.roadrunner.TrajectoryBuilder;
@@ -28,19 +29,14 @@ public class MeepMeepTesting {
                 .strafeToConstantHeading(new Vector2d(-6, 48))
 
                 .setTangent(Math.toRadians(90))
-                .splineToConstantHeading(new Vector2d(-32, 39), Math.toRadians(270))
-
+                .splineToConstantHeading(new Vector2d(-34, 39), Math.toRadians(270))
                 .setTangent(Math.toRadians(270))
-                .splineToConstantHeading(new Vector2d(-32, 39), Math.toRadians(270))
-                .setTangent(Math.toRadians(270))
-                .splineToConstantHeading(new Vector2d(-40, 15), Math.toRadians(97))
-                .splineToConstantHeading(new Vector2d(-40, 48), Math.toRadians(290))
+                .splineToConstantHeading(new Vector2d(-44, 17), Math.toRadians(97))
+                .strafeToConstantHeading(new Vector2d(-44, 57))
                 .setTangent(Math.toRadians(290))
-                .splineToConstantHeading(new Vector2d(-50, 15), Math.toRadians(97))
-                .splineToConstantHeading(new Vector2d(-50, 48), Math.toRadians(290))
-                .setTangent(Math.toRadians(290))
-                .splineToConstantHeading(new Vector2d(-60, 15), Math.toRadians(97))
-                .splineToConstantHeading(new Vector2d(-60, 47), Math.toRadians(290))
+                .splineToConstantHeading(new Vector2d(-54, 17), Math.toRadians(97))
+                .strafeToConstantHeading(new Vector2d(-52, 57))
+                .setTangent(Math.toRadians(90))
 
                 .setTangent(Math.toRadians(290))
                 .splineToLinearHeading(new Pose2d(-22, 46, Math.toRadians(135)), Math.toRadians(15))
