@@ -47,8 +47,10 @@ public class intothedeep_tele_blue extends intothedeep_opmode {
         HANG_UP1,
         HANG_DOWN1,
         HANG_UP2,
+        HANG_UP2_EXTEND,
         HANG_DOWN2,
         CARABINER,
+        CARABINER2,
 
         INIT
     }
@@ -114,8 +116,13 @@ public class intothedeep_tele_blue extends intothedeep_opmode {
     public void childLoop(){
         super.childLoop();
 
-        extendo.setPower(2.4*slidesPidExtendo.calculatePowerExtendo(slidePositionTargetEx) + exConstantPID);
-        slidesPidExtendo.updateEx(extendo.getCurrentPosition(), timeGap);
+        if(gamepad2.dpad_down && gamepad2prev.dpad_down){
+            extendo.setPower(-1.0);
+        }else{
+            extendo.setPower(2.4*slidesPidExtendo.calculatePowerExtendo(slidePositionTargetEx) + exConstantPID);
+            slidesPidExtendo.updateEx(extendo.getCurrentPosition(), timeGap);
+        }
+
 
         verticalPower = 2.0*slidesPidVertical.calculatePowerVertical(slidePositionTargetVe) + veConstantPID;
         ls.setPower(verticalPower);
@@ -136,7 +143,13 @@ public class intothedeep_tele_blue extends intothedeep_opmode {
         }
 
         if(veHangPower){
-            veConstantPID = 0.5;
+            veConstantPID = -1.0;
+        }
+
+        if(veAddPowerUp){
+            veConstantPID = 0.4;
+        }else{
+            veConstantPID = 0.0;
         }
 
         switch(telestate){
@@ -345,7 +358,7 @@ public class intothedeep_tele_blue extends intothedeep_opmode {
                 }
                 break;
             case OUTPUTCLAW_OPEN:
-                if(gamepad1.a && !gamepad1prev.a || outputDS.getDistance(DistanceUnit.MM) < maxBucketDist){
+                if(gamepad1.a && !gamepad1prev.a /*|| outputDS.getDistance(DistanceUnit.MM) < maxBucketDist*/){
                     outputClaw.setPosition(outputClawOpenPos);
                     telestate = TeleState.RESET;
                     stateTimer.reset();
@@ -365,7 +378,7 @@ public class intothedeep_tele_blue extends intothedeep_opmode {
                 }
                 break;
             case RESET:
-                if(stateTimer.seconds() >= 0.45 && outputDS.getDistance(DistanceUnit.MM) > minSlideSafeDist){
+                if(stateTimer.seconds() >= 1.2 /*&& outputDS.getDistance(DistanceUnit.MM) > minSlideSafeDist*/){
                     outputWrist.setPosition(outputWristStraightPos);
                     deltaLeft.setPosition(deltaLeftPreTransfer);
                     deltaRight.setPosition(deltaRightPreTransfer);
@@ -378,7 +391,7 @@ public class intothedeep_tele_blue extends intothedeep_opmode {
                 }
                 break;
             case HANG_UP1:
-                springToggle.setPosition(springToggleOffPos);
+                springToggle.setPosition(springToggleOnPos);
                 if(stateTimer.seconds() > 0.4) {
                     alpha.setPosition(alphaTransferPos);
                     beta.setPosition(betaTransferPos);
@@ -391,7 +404,7 @@ public class intothedeep_tele_blue extends intothedeep_opmode {
             case HANG_DOWN1:
                 if(veHangPower || ms.getCurrentPosition() > 750.0 && !gamepad1.dpad_up && stateTimer.seconds() > 0.8){
                     veHangPower = true;
-                    slidePositionTargetVe = 300;
+                    slidePositionTargetVe = -400;
                     slidePositionTargetEx = slideMinEx;
                     exAddPower = true;
                     if(carabinerPressed || verticalSlidesLimit.isPressed()){
@@ -402,48 +415,69 @@ public class intothedeep_tele_blue extends intothedeep_opmode {
                 break;
             case CARABINER:
                 if(!carabinerPressed){
-                    veHangPower = false;
-                    exAddPower = false;
-                    slidePositionTargetEx = swingSizeEx;
-                    alpha.setPosition(alphaLowerPos);
-                    beta.setPosition(betaLowerPos);
+                    slidePositionTargetVe = -400;
+                    veHangPower = true;
+                    telestate = TeleState.HANG_UP2;
                     stateTimer.reset();
                 }
                 break;
             case HANG_UP2:
-                if(extendo.getCurrentPosition() > swingSizeEx - 15 && stateTimer.seconds() > 1.00){
+                if(stateTimer.seconds() > 0.75){
+                    veHangPower = false;
                     exAddPower = false;
-                    slidePositionTargetVe = slideMaxVe;
-                    telestate = TeleState.HANG_DOWN2;
+                    slidePositionTargetVe = 2500;
+                    veAddPowerUp = true;
+                    telestate = TeleState.HANG_UP2_EXTEND;
                     stateTimer.reset();
                 }
                 break;
+            case HANG_UP2_EXTEND:
+                if(stateTimer.seconds() > 0.3){
+                    exAddPower = false;
+                    slidePositionTargetEx = swingSizeEx;
+                    alpha.setPosition(0.75);
+                    beta.setPosition(0.75);
+                    telestate = TeleState.HANG_DOWN2;
+                    stateTimer.reset();
+                }
             case HANG_DOWN2:
-                if(ms.getCurrentPosition() > slideMaxVe - 30){
+                if(ms.getCurrentPosition() > 1780){
                     slidePositionTargetEx = slideMinEx;
                     exAddPower = true;
                     alpha.setPosition(alphaTransferPos);
                     beta.setPosition(betaTransferPos);
+                    veAddPowerUp = false;
                 }
-                if(extendo.getCurrentPosition() < slideMinEx + 15){
+                if(extendo.getCurrentPosition() < slideMinEx + 30){
                     veHangPower = true;
-                    slidePositionTargetVe = slideMinVe;
+                    veAddPowerUp = false;
+                    slidePositionTargetVe = -400;
+                }
+                if(carabinerPressed){
+                    stateTimer.reset();
+                    telestate = TeleState.CARABINER2;
                 }
                 break;
+            case CARABINER2:
+                if(!carabinerPressed){
+                    veHangPower = true;
+                    exAddPower = false;
+                    slidePositionTargetVe = -400;
+                }
         }
 
         //intake wrist
         if(gamepad2.left_trigger > 0.0){
-            intakeWristPos -= 0.01;
-            if(intakeWristPos < intakeWristLeftLimit){
+            intakeWristPos += 0.01;
+            if(intakeWristPos > intakeWristLeftLimit){
                 intakeWristPos = intakeWristLeftLimit;
             }
             intakeWrist.setPosition(intakeWristPos);
         }
 
         if(gamepad2.right_trigger > 0.0){
-            intakeWristPos += 0.01;
-            if(intakeWristPos > intakeWristRightLimit){
+            intakeWristPos -= 0.01;
+            if(intakeWristPos < intakeWristRightLimit){
                 intakeWristPos = intakeWristRightLimit;
             }
             intakeWrist.setPosition(intakeWristPos);
@@ -490,10 +524,6 @@ public class intothedeep_tele_blue extends intothedeep_opmode {
             slidePositionTargetVe -= slideTargetGainVe * gamepad2.right_stick_y;
         }
 
-        if(gamepad2.dpad_down && gamepad2prev.dpad_down){
-            extendo.setPower(-1.0);
-        }
-
         if(gamepad1.dpad_right && !gamepad1prev.dpad_right){
             telestate = TeleState.OUTPUTCLAWSPECIMEN_OPEN;
         }
@@ -501,36 +531,36 @@ public class intothedeep_tele_blue extends intothedeep_opmode {
 
 
         //tuning positions
-        /*if(gamepad2.dpad_right){
+        /*if(gamepad2.dpad_right && !gamepad2prev.dpad_right){
             tuningPos1 += 0.01;
             if(tuningPos1 > 1.0){
                 tuningPos1 = 1.0;
             }
         }
 
-        if(gamepad2.dpad_left){
+        if(gamepad2.dpad_left && !gamepad2prev.dpad_left){
             tuningPos1 -= 0.01;
             if(tuningPos1 < 0.0){
                 tuningPos1 = 0.0;
             }
         }
 
-        if(gamepad2.dpad_up){
+        if(gamepad2.dpad_up && !gamepad2prev.dpad_up){
             tuningPos2 += 0.01;
             if(tuningPos2 > 1.0){
                 tuningPos2 = 1.0;
             }
         }
 
-        if(gamepad2.dpad_down){
+        if(gamepad2.dpad_down && !gamepad2prev.dpad_down){
             tuningPos2 -= 0.01;
             if(tuningPos2 < 0.0){
                 tuningPos2 = 0.0;
             }
         }
 
-        deltaLeft.setPosition(tuningPos1);
-        deltaRight.setPosition(tuningPos2);*/
+
+        intakeWrist.setPosition(tuningPos1);*/
 
         //drivetrain
         double y = -gamepad1.left_stick_x; //verticals

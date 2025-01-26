@@ -62,26 +62,26 @@ abstract public class intothedeep_opmode extends OpMode{
     ElapsedTime slidesTimer = new ElapsedTime(ElapsedTime.Resolution.MILLISECONDS);
 
     //intake constants
-    public static double intakeClawOpenPos = 0.10;
-    public static double intakeClawClosedPos = 0.48;
-    public static double alphaTransferPos = 0.52;
-    public static double betaTransferPos = 0.52;
-    public static double alphaIntakePos = 0.95;
-    public static double betaIntakePos = 0.95;
-    public static double alphaLowerPos = 1.0;
-    public static double betaLowerPos = 1.0;
-    public static double intakeWristStraightPos = 0.52;
-    public static double intakeWristRightLimit = 0.73;
-    public static double intakeWristLeftLimit = 0.29;
+    public static double intakeClawOpenPos = 0.24;//used to be 0.10
+    public static double intakeClawClosedPos = 0.39;
+    public static double alphaTransferPos = 0.56;
+    public static double betaTransferPos = 0.56;
+    public static double alphaIntakePos = 0.87;
+    public static double betaIntakePos = 0.87;
+    public static double alphaLowerPos = 0.99;
+    public static double betaLowerPos = 0.99;
+    public static double intakeWristStraightPos = 0.24;
+    public static double intakeWristRightLimit = 0.0;
+    public static double intakeWristLeftLimit = 0.46;
     public static double intakeWristPos;
 
     //slides constants
     public static double slideMinEx = 0.0;
     public static double slideMinVe = -5.0;
     public static double slideMaxEx = 450.0;
-    public static double slideMaxVe = 1830.0;
+    public static double slideMaxVe = 1910.0;
     public static double slideSpecimenVe = 400.0;
-    public static double slideHangVe = 1300.0;
+    public static double slideHangVe = 1850.0;
     public static double swingSizeEx = 120.0;
     public static double slidePositionTargetEx;
     public static double slidePositionTargetVe;
@@ -90,26 +90,26 @@ abstract public class intothedeep_opmode extends OpMode{
     SlidesPID slidesPidVertical;
 
     //output constants
-    public static double deltaRightPreTransfer = 0.62;
-    public static double deltaLeftPreTransfer = 0.24;
-    public static double deltaRightTransferPos = 0.66;
+    public static double deltaRightPreTransfer = 0.41;
+    public static double deltaLeftPreTransfer = 0.25;
+    public static double deltaRightTransferPos = 0.46;
     public static double deltaLeftTransferPos = 0.20;
-    public static double deltaRightSamplePos = 0.50;
-    public static double deltaLeftSamplePos = 0.38;
-    public static double deltaRightSpecimenPos = 0.28;
-    public static double deltaLeftSpecimenPos = 0.27;
+    public static double deltaRightSamplePos = 0.26;
+    public static double deltaLeftSamplePos = 0.44;
+    public static double deltaRightSpecimenPos = 0.08;
+    public static double deltaLeftSpecimenPos = 0.23;
     public static double outputWristStraightPos = 0.90;
     public static double outputWristSwitchPos = 0.23;
     public static double outputWristSpecimenPos = 0.15;
-    public static double outputClawClosedPos = 0.48;
-    public static double outputClawOpenPos = 0.76;
+    public static double outputClawClosedPos = 0.47;
+    public static double outputClawOpenPos = 0.64;
 
     //hang constants
     public static double springToggleOnPos = 0.58;
     public static double springToggleOffPos = 0.94;
 
     //times
-    final double INTAKELOWER_TIME = 0.04;
+    final double INTAKELOWER_TIME = 0.10;
     final double INTAKECLAW_TIME = 0.35;
     final double OUTPUTCLAW_TIME = 0.30;
     final double OUTPUTARM_READY = 0.05;
@@ -137,10 +137,11 @@ abstract public class intothedeep_opmode extends OpMode{
     public static double veConstantPID = 0.0;
     boolean exAddPower = false;
     boolean veAddPowerDown = false;
+    boolean veAddPowerUp = false;
     boolean veHangPower = false;
     boolean outputWristSpecimen = false;
-    double tuningPos1 = 0.5;
-    double tuningPos2 = 0.5;
+    public static double tuningPos1 = 0.5;
+    public static double tuningPos2 = 0.5;
     double colorThreshold = 300;
     boolean blueAlliance;
 
@@ -198,6 +199,10 @@ abstract public class intothedeep_opmode extends OpMode{
 
         outputClaw.setDirection(Servo.Direction.REVERSE);
         beta.setDirection(Servo.Direction.REVERSE);
+
+        ls.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        rs.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        ms.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
 
         slidePositionTargetVe = 0.0;
 
