@@ -64,12 +64,12 @@ abstract public class intothedeep_opmode extends OpMode{
     //intake constants
     public static double intakeClawOpenPos = 0.24;//used to be 0.10
     public static double intakeClawClosedPos = 0.39;
-    public static double alphaTransferPos = 0.56;
-    public static double betaTransferPos = 0.56;
-    public static double alphaIntakePos = 0.87;
-    public static double betaIntakePos = 0.87;
-    public static double alphaLowerPos = 0.99;
-    public static double betaLowerPos = 0.99;
+    public static double alphaTransferPos = 0.53;
+    public static double betaTransferPos = 0.53;
+    public static double alphaIntakePos = 0.84;
+    public static double betaIntakePos = 0.84;
+    public static double alphaLowerPos = 0.96;
+    public static double betaLowerPos = 0.96;
     public static double intakeWristStraightPos = 0.24;
     public static double intakeWristRightLimit = 0.0;
     public static double intakeWristLeftLimit = 0.46;
@@ -82,7 +82,7 @@ abstract public class intothedeep_opmode extends OpMode{
     public static double slideMaxVe = 1910.0;
     public static double slideSpecimenVe = 400.0;
     public static double slideHangVe = 1850.0;
-    public static double swingSizeEx = 120.0;
+    public static double swingSizeEx = 90.0;
     public static double slidePositionTargetEx;
     public static double slidePositionTargetVe;
     double verticalPower;

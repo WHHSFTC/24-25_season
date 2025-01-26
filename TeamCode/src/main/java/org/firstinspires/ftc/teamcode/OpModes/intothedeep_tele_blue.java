@@ -84,31 +84,31 @@ public class intothedeep_tele_blue extends intothedeep_opmode {
     }
 
     public boolean isCorrectColor(ColorSensor sensorOutput) {
-        if(gamepad2.dpad_left && gamepad2prev.dpad_left){
+        if(intakeClaw.getPosition() < intakeClawOpenPos + 0.02 || gamepad2.dpad_left && gamepad2prev.dpad_left){
             return true;
         }
         else{
-        if(blueAlliance) {
-            if(specimenOutputState || ozoneOutputState){
-                return sensorOutput.blue() > 0.6 * colorThreshold && sensorOutput.red() < colorThreshold * 1.5 &&
-                        sensorOutput.green() < colorThreshold * 1.5;
+            if(blueAlliance) {
+                if(specimenOutputState || ozoneOutputState){
+                    return sensorOutput.blue() > 0.6 * colorThreshold && sensorOutput.red() < colorThreshold * 1.5 &&
+                            sensorOutput.green() < colorThreshold * 1.5;
+                }
+                if(sampleOutputState){
+                    return (sensorOutput.blue() > colorThreshold || sensorOutput.green() > colorThreshold)
+                            && (sensorOutput.red() < sensorOutput.green() || sensorOutput.red() < sensorOutput.blue());
+                }
             }
-            if(sampleOutputState){
-                return (sensorOutput.blue() > colorThreshold || sensorOutput.green() > colorThreshold)
-                        && (sensorOutput.red() < sensorOutput.green() || sensorOutput.red() < sensorOutput.blue());
+            else {
+                if (specimenOutputState || ozoneOutputState) {
+                    return sensorOutput.blue() < 0.6 * colorThreshold
+                            && sensorOutput.red() > colorThreshold * 1.5 && sensorOutput.green() < colorThreshold * 1.5;
+                }
+                if(sampleOutputState){
+                    return (sensorOutput.red() > colorThreshold || sensorOutput.green() > colorThreshold)
+                            && sensorOutput.blue() < sensorOutput.green() || sensorOutput.blue() < sensorOutput.red();
+                }
             }
-        }
-        else {
-            if (specimenOutputState || ozoneOutputState) {
-                return sensorOutput.blue() < 0.6 * colorThreshold
-                        && sensorOutput.red() > colorThreshold * 1.5 && sensorOutput.green() < colorThreshold * 1.5;
-            }
-            if(sampleOutputState){
-                return (sensorOutput.red() > colorThreshold || sensorOutput.green() > colorThreshold)
-                        && sensorOutput.blue() < sensorOutput.green() || sensorOutput.blue() < sensorOutput.red();
-            }
-        }
-        return true;
+            return true;
         }
     }
 
@@ -157,6 +157,7 @@ public class intothedeep_tele_blue extends intothedeep_opmode {
                 veAddPowerDown = false;
                 exAddPower = false;
                 if(gamepad2.a && !gamepad2prev.a){
+                    intakeWristPos = intakeWristStraightPos;
                     slidePositionTargetEx = slideMaxEx;
                     alpha.setPosition(alphaIntakePos);
                     beta.setPosition(betaIntakePos);
@@ -243,7 +244,7 @@ public class intothedeep_tele_blue extends intothedeep_opmode {
                         deltaRight.setPosition(deltaRightTransferPos);
                         telestate = TeleState.OUTPUTCLAW_CLOSE;
                         stateTimer.reset();
-                        }
+                    }
                     else{
                         exAddPower = false;
                         slidePositionTargetEx = slideMaxEx;
@@ -253,8 +254,8 @@ public class intothedeep_tele_blue extends intothedeep_opmode {
                         intakeWristPos = intakeWristStraightPos;
                         intakeWrist.setPosition(intakeWristStraightPos);
                         telestate = TeleState.ARM_INTAKE;
-                        }
                     }
+                }
                 break;
             case OUTPUTCLAW_CLOSE:
                 if(stateTimer.seconds() >= OUTPUTARM_READY){
@@ -300,10 +301,10 @@ public class intothedeep_tele_blue extends intothedeep_opmode {
                 break;
             case SPECIMEN_DELAY:
                 if(stateTimer.seconds() >= 0.1){
-                slidePositionTargetEx = slideMaxEx;
-                alpha.setPosition(alphaIntakePos);
-                beta.setPosition(betaIntakePos);
-                telestate = TeleState.SPECIMEN_OUTPUT;
+                    slidePositionTargetEx = slideMaxEx;
+                    alpha.setPosition(alphaIntakePos);
+                    beta.setPosition(betaIntakePos);
+                    telestate = TeleState.SPECIMEN_OUTPUT;
                 }
                 break;
             case SPECIMEN_OUTPUT:
@@ -392,7 +393,7 @@ public class intothedeep_tele_blue extends intothedeep_opmode {
                 break;
             case HANG_UP1:
                 springToggle.setPosition(springToggleOnPos);
-                if(stateTimer.seconds() > 0.4) {
+                if(stateTimer.seconds() > 0.5) {
                     alpha.setPosition(alphaTransferPos);
                     beta.setPosition(betaTransferPos);
                     slidePositionTargetVe = slideHangVe;
@@ -407,7 +408,7 @@ public class intothedeep_tele_blue extends intothedeep_opmode {
                     slidePositionTargetVe = -400;
                     slidePositionTargetEx = slideMinEx;
                     exAddPower = true;
-                    if(carabinerPressed || verticalSlidesLimit.isPressed()){
+                    if(carabinerPressed || ms.getCurrentPosition() < -205.0){
                         telestate = TeleState.CARABINER;
                         stateTimer.reset();
                     }
@@ -419,36 +420,44 @@ public class intothedeep_tele_blue extends intothedeep_opmode {
                     veHangPower = true;
                     telestate = TeleState.HANG_UP2;
                     stateTimer.reset();
+                } else {
+                    veHangPower = true;
+                    slidePositionTargetVe = -400;
+                    slidePositionTargetEx = slideMinEx;
+                    exAddPower = true;
                 }
                 break;
             case HANG_UP2:
-                if(stateTimer.seconds() > 0.75){
+                if(stateTimer.seconds() > 0.25){
                     veHangPower = false;
                     exAddPower = false;
                     slidePositionTargetVe = 2500;
                     veAddPowerUp = true;
-                    telestate = TeleState.HANG_UP2_EXTEND;
-                    stateTimer.reset();
+                    if(stateTimer.seconds() > 0.75){
+                        exAddPower = false;
+                        slidePositionTargetEx = swingSizeEx;
+                        alpha.setPosition(0.75);
+                        beta.setPosition(0.75);
+                        telestate = TeleState.HANG_DOWN2;
+                        stateTimer.reset();
+                    }
                 }
                 break;
-            case HANG_UP2_EXTEND:
-                if(stateTimer.seconds() > 0.3){
-                    exAddPower = false;
-                    slidePositionTargetEx = swingSizeEx;
-                    alpha.setPosition(0.75);
-                    beta.setPosition(0.75);
-                    telestate = TeleState.HANG_DOWN2;
-                    stateTimer.reset();
-                }
             case HANG_DOWN2:
-                if(ms.getCurrentPosition() > 1780){
+                if(ms.getCurrentPosition() > 1767 && extendo.getCurrentPosition() > swingSizeEx - 10){
                     slidePositionTargetEx = slideMinEx;
                     exAddPower = true;
                     alpha.setPosition(alphaTransferPos);
                     beta.setPosition(betaTransferPos);
                     veAddPowerUp = false;
+                    stateTimer.reset();
+                } else {
+                    veHangPower = false;
+                    exAddPower = false;
+                    slidePositionTargetVe = 2500;
+                    veAddPowerUp = true;
                 }
-                if(extendo.getCurrentPosition() < slideMinEx + 30){
+                if(extendo.getCurrentPosition() < slideMinEx + 10 && stateTimer.seconds() > 1.5){
                     veHangPower = true;
                     veAddPowerUp = false;
                     slidePositionTargetVe = -400;
