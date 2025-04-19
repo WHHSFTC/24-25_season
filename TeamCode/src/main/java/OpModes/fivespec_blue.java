@@ -12,7 +12,7 @@ import com.pedropathing.localization.Pose;
 @Config
 @Autonomous (preselectTeleOp = "intothedeep_tele_blue")
 public class fivespec_blue extends intothedeep_auto{
-//
+////
     private final Pose startPos = new Pose(7.1791, 55.0, Math.toRadians(180));
     private final Pose controlSample1Pos = new Pose(17.32, 31.79, Math.toRadians(180));
     private final Pose controlSample2Pos = new Pose(18.98, 38.90, Math.toRadians(180));
