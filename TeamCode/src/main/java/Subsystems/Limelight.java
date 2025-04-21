@@ -8,15 +8,24 @@ public class Limelight {
     private Limelight3A limelight;
     private double tx, ty, ta, tv; // Vision variables
 
+    /**
+     * No DT Constructor, only LL and pipelines
+     * @param llName Name of limelight in Hardware Map
+     * @param hardwareMap Hardware Map object
+     * @param blueDetector pipeline # for blue neural detector
+     * @param redDetector pipeline # for red neural detector
+     * @param blueSnap pipeline # for blue angle detection Snapscript
+     * @param redSnap pipeline # for red angle detection Snapscript
+     */
     public Limelight(String llName, HardwareMap hardwareMap, int blueDetector, int redDetector, int blueSnap, int redSnap) {
         limelight = hardwareMap.get(Limelight3A.class, llName);
     }
 
-    public void llPipeLineSwitch(int pipeline) {
+    public void switchPipelineTo(int pipeline) {
         limelight.pipelineSwitch(pipeline);
     }
 
-    public void start() {
+    public void startLimelight() {
         limelight.start();
     }
 
