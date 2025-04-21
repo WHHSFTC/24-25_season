@@ -4,7 +4,7 @@ import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
-//Not in use, but kept for reference.
+//Not in use, but kept for reference
 public class Limelight {
     private Limelight3A limelight;
     private double tx, ty, ta, tv; // Vision variables
