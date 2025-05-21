@@ -662,6 +662,7 @@ public class intothedeep_tele_blue extends intothedeep_opmode {
         gamepad1prev.copy(gamepad1);
         gamepad2prev.copy(gamepad2);
 
+        /*
         telemetry.addData("ex raw power", exPowerRaw);
         telemetry.addData("ex scaled power", exPowerScaled);
         telemetry.addData("ve constant pid", veConstantPID);
@@ -670,5 +671,6 @@ public class intothedeep_tele_blue extends intothedeep_opmode {
         telemetry.addData("tele state", "tele state: " + telestate);
         telemetry.addData("correct color", isCorrectColor(intakeColor));
         telemetry.addData("limelight status", limelight.getStatus());
+         */
     }
 }

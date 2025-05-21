@@ -247,6 +247,10 @@ abstract public class intothedeep_opmode extends OpMode{
         ozoneOutputState = false;
         sampleOutputState = false;
 
+        // Bahand Debugging Output 5/20
+        telemetry.addData("deltaLeft", "deltaLeft position: " + deltaLeft.getPosition());
+        telemetry.addData("deltaRight", "deltaRight position: " + deltaRight.getPosition());
+
         for(LynxModule hub : bothHubs) {
             hub.setBulkCachingMode(LynxModule.BulkCachingMode.MANUAL);
         }
@@ -324,7 +328,6 @@ abstract public class intothedeep_opmode extends OpMode{
         }
 
         childLoop();
-
         telemetry.addData("spring toggle pos", "spring toggle pos: " + springToggle.getPosition());
         telemetry.addData("battery voltage", "battery voltage: " + voltageSensor.getVoltage());
         telemetry.addData("intakeWrist position", "intake wrist position: " + intakeWrist.getPosition());
@@ -335,9 +338,9 @@ abstract public class intothedeep_opmode extends OpMode{
         telemetry.addData("intakeClawPos", "intake claw position: " + intakeClaw.getPosition());
         telemetry.addData("outputWristPos", "output wrist position: " + outputWrist.getPosition());
         telemetry.addData("outputClawPos", "out claw position: " + outputClaw.getPosition());
+
         telemetry.addData("deltaLeft", "deltaLeft position: " + deltaLeft.getPosition());
         telemetry.addData("deltaRight", "deltaRight position: " + deltaRight.getPosition());
-
         telemetry.addData("ms position", "ms position: " + ms.getCurrentPosition());
 
         //telemetry.addData("Error Extendo", "Error Extendo: " + (slidePositionTargetEx - extendo.getCurrentPosition()));
