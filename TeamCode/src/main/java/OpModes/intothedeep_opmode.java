@@ -368,6 +368,49 @@ abstract public class intothedeep_opmode extends OpMode{
         dashboard.sendTelemetryPacket(packet);
     }
 
+    public void calibrateOutput() {
+        double leftPos = deltaLeft.getPosition();
+        double rightPos = deltaRight.getPosition();
+        boolean swapped = false;
+        if (gamepad1.dpad_up) {
+            leftPos += 1;
+            rightPos -= 1;
+        }
+        if (gamepad1.dpad_down) {
+            leftPos -= 1;
+            rightPos += 1;
+        }
+        if (gamepad1.dpad_left) {
+            leftPos += 1;
+            rightPos += 1;
+        }
+        if (gamepad1.dpad_right) {
+            leftPos -= 1;
+            rightPos -= 1;
+        }
+        if (swapped) {
+            deltaLeft.setPosition(rightPos);
+            deltaRight.setPosition(leftPos);
+        } else if (!swapped) {
+            deltaLeft.setPosition(leftPos);
+            deltaRight.setPosition(rightPos);
+        }
+
+        if (gamepad1.a) {
+            deltaLeftTransferPos = deltaLeft.getPosition();
+            deltaRightTransferPos = deltaRight.getPosition();
+
+            deltaLeftPreTransfer = deltaLeftTransferPos + .14;
+            deltaRightPreTransfer = deltaRightTransferPos - .15;
+
+            deltaLeftSamplePos = deltaLeftTransferPos + .23;
+            deltaRightSamplePos = deltaRightTransferPos - .23;
+
+            deltaLeftSpecimenPos = deltaLeftTransferPos + .11;
+            deltaRightSpecimenPos = deltaRightTransferPos - .40;
+        }
+    }
+
     public void setWristPosition() {
         if(corners != null) {
             limelight.pipelineSwitch(4);
