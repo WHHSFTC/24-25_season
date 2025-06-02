@@ -333,6 +333,8 @@ abstract public class intothedeep_opmode extends OpMode{
         calibrateOutput(); // calibrate output servos
 
         childLoop();
+        /*
+
         telemetry.addData("spring toggle pos", "spring toggle pos: " + springToggle.getPosition());
         telemetry.addData("battery voltage", "battery voltage: " + voltageSensor.getVoltage());
         telemetry.addData("intakeWrist position", "intake wrist position: " + intakeWrist.getPosition());
@@ -371,27 +373,29 @@ abstract public class intothedeep_opmode extends OpMode{
         packet.put("tx", tx);
         packet.put("ty", ty);
         dashboard.sendTelemetryPacket(packet);
+
+         */
     }
 
     public void calibrateOutput() {
         double leftPos = deltaLeft.getPosition();
         double rightPos = deltaRight.getPosition();
-        boolean swapped = false;
+        boolean swapped = true;
         if (gamepad1.dpad_up) {
-            leftPos += .01;
-            rightPos -= .01;
+            leftPos += .001;
+            rightPos -= .001;
         }
         if (gamepad1.dpad_down) {
-            leftPos -= .01;
-            rightPos += .01;
+            leftPos -= .001;
+            rightPos += .001;
         }
         if (gamepad1.dpad_left) {
-            leftPos += .01;
-            rightPos += .01;
+            leftPos += .001;
+            rightPos += .001;
         }
         if (gamepad1.dpad_right) {
-            leftPos -= .01;
-            rightPos -= .01;
+            leftPos -= .001;
+            rightPos -= .001;
         }
         if (swapped) {
             deltaLeft.setPosition(rightPos);
