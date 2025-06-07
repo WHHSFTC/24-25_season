@@ -32,7 +32,7 @@ import java.util.Timer;
 //@Disabled
 @Config
 @TeleOp
-abstract public class intothedeep_opmode extends OpMode{
+abstract public class intothedeep_opmode extends OpMode {
     FtcDashboard dashboard;
     static TelemetryPacket packet;
 
@@ -102,20 +102,33 @@ abstract public class intothedeep_opmode extends OpMode{
     SlidesPID slidesPidExtendo;
     SlidesPID slidesPidVertical;
 
-    //output constants
-    public static double deltaRightPreTransfer = 0.36;  //0.36
-    public static double deltaLeftPreTransfer = 0.39; //0.37
-    public static double deltaRightTransferPos = 0.51; //0.49
-    public static double deltaLeftTransferPos = 0.25; //0.30 //0.29 //0.27
-    public static double deltaRightSamplePos = 0.28; // 0.28 was askew
-    public static double deltaLeftSamplePos = 0.48;
-    public static double deltaRightSpecimenPos = 0.11;
-    public static double deltaLeftSpecimenPos = 0.36;
+    // --- OUTPUT CONSTANTS ---
+
+    // Pretransfer Position - Slightly above transfer.
+    public static double deltaRightPreTransfer = 0.48;
+    public static double deltaLeftPreTransfer = 0.55;
+
+    // Transfer Position - Output arm resting on the intake.
+    public static double deltaRightTransferPos = 0.63;
+    public static double deltaLeftTransferPos = 0.41;
+
+    // Sample Position - Output arm upright, facing backward for scoring in bucket
+    public static double deltaRightSamplePos = 0.40;
+    public static double deltaLeftSamplePos = 0.64;
+
+    // Specimen Position - Output arm slanted sideways and down, angled to score on the chamber
+    public static double deltaRightSpecimenPos = 0.23;
+    public static double deltaLeftSpecimenPos = 0.52;
+
+
+    // Output wrist positions
     public static double outputWristStraightPos = 0.94;
     public static double outputWristSwitchPos = 0.27;
     public static double outputWristSpecimenPos = 0.15;
+
+    // Output claw positions
     public static double outputClawClosedPos = 0.32;
-    public static double outputClawOpenPos = 0.55; //0.54
+    public static double outputClawOpenPos = 0.55;
 
     //hang constants
     public static double springToggleOnPos = 0.36;
@@ -179,8 +192,9 @@ abstract public class intothedeep_opmode extends OpMode{
     public static double strafeCorrection = 1.6;
 
     List<List<Double>> corners;
+
     @Override
-    public void init(){
+    public void init() {
 
         stateTimer.reset();
         slidesTimer.reset();
@@ -202,8 +216,14 @@ abstract public class intothedeep_opmode extends OpMode{
         rs = hardwareMap.get(DcMotor.class, "rs");
         ms = hardwareMap.get(DcMotor.class, "ms");
 
-        ls.setDirection(DcMotorSimple.Direction.REVERSE);
-        rs.setDirection(DcMotorSimple.Direction.REVERSE);
+//        ls.setDirection(DcMotorSimple.Direction.REVERSE);
+//        rs.setDirection(DcMotorSimple.Direction.REVERSE);
+//        ms.setDirection(DcMotorSimple.Direction.FORWARD);
+
+        // Negated the ls rs ms due to reversed stringing (6/3)
+        ls.setDirection(DcMotorSimple.Direction.FORWARD);
+        rs.setDirection(DcMotorSimple.Direction.FORWARD);
+        ms.setDirection(DcMotorSimple.Direction.REVERSE);
 
         rs.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         ls.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
@@ -254,24 +274,23 @@ abstract public class intothedeep_opmode extends OpMode{
         telemetry.addData("ms position", "ms position: " + ms.getCurrentPosition());
         telemetry.addData("extendo position", "extendo position: " + extendo.getCurrentPosition());
 
-        for(LynxModule hub : bothHubs) {
+        for (LynxModule hub : bothHubs) {
             hub.setBulkCachingMode(LynxModule.BulkCachingMode.MANUAL);
         }
     }
 
     @Override
-    public void start(){
+    public void start() {
         extendo.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         ms.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         rs.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         ls.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
 
-
     }
 
     @Override
-    final public void loop(){
+    final public void loop() {
 
         for (LynxModule hub : bothHubs) {
             hub.clearBulkCache();
@@ -296,7 +315,7 @@ abstract public class intothedeep_opmode extends OpMode{
         loopCumulativeTime += timeGap;
 
         if (loopCumulativeTime >= 1000) {
-            telemetry.addData("Time per Loop", "Time per Loop: " + loopCumulativeTime/loopCounter);
+            telemetry.addData("Time per Loop", "Time per Loop: " + loopCumulativeTime / loopCounter);
             loopCounter = 0.0;
             loopCumulativeTime = 0.0;
         }
@@ -308,23 +327,23 @@ abstract public class intothedeep_opmode extends OpMode{
 
         carabinerPressed = carabinerLimit.isPressed();
 
-        if(slidePositionTargetEx < -5){
+        if (slidePositionTargetEx < -5) {
             slidePositionTargetEx = -5;
         }
 
-        if(slidePositionTargetEx > slideMaxEx){
+        if (slidePositionTargetEx > slideMaxEx) {
             slidePositionTargetEx = slideMaxEx;
         }
 
-        if(slidePositionTargetVe < -100){
+        if (slidePositionTargetVe < -100) {
             slidePositionTargetVe = -100;
         }
 
-        if(slidePositionTargetVe > slideMaxVe){
+        if (slidePositionTargetVe > slideMaxVe) {
             slidePositionTargetVe = slideMaxVe;
         }
 
-        if(extendoSlidesLimit.isPressed()){
+        if (extendoSlidesLimit.isPressed()) {
             extendo.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
             exAddPower = false;
             slideMinEx = 0.0;
@@ -345,11 +364,11 @@ abstract public class intothedeep_opmode extends OpMode{
         telemetry.addData("intakeClawPos", "intake claw position: " + intakeClaw.getPosition());
         telemetry.addData("outputWristPos", "output wrist position: " + outputWrist.getPosition());
         telemetry.addData("outputClawPos", "out claw position: " + outputClaw.getPosition());
-
+        */
         telemetry.addData("deltaLeft", "deltaLeft position: " + deltaLeft.getPosition());
         telemetry.addData("deltaRight", "deltaRight position: " + deltaRight.getPosition());
         telemetry.addData("ms position", "ms position: " + ms.getCurrentPosition());
-
+        /*
         //telemetry.addData("Error Extendo", "Error Extendo: " + (slidePositionTargetEx - extendo.getCurrentPosition()));
         telemetry.addData("extendo position", "extendo position: " + extendo.getCurrentPosition());
         telemetry.addData("extendo power", "extendo power: " + extendo.getPower());
@@ -380,22 +399,22 @@ abstract public class intothedeep_opmode extends OpMode{
     public void calibrateOutput() {
         double leftPos = deltaLeft.getPosition();
         double rightPos = deltaRight.getPosition();
-        boolean swapped = true;
+        boolean swapped = false;
         if (gamepad1.dpad_up) {
-            leftPos += .001;
-            rightPos -= .001;
+            leftPos += .01;
+            rightPos -= .01;
         }
         if (gamepad1.dpad_down) {
-            leftPos -= .001;
-            rightPos += .001;
+            leftPos -= .01;
+            rightPos += .01;
         }
         if (gamepad1.dpad_left) {
-            leftPos += .001;
-            rightPos += .001;
+            leftPos += .01;
+            rightPos += .01;
         }
         if (gamepad1.dpad_right) {
-            leftPos -= .001;
-            rightPos -= .001;
+            leftPos -= .01;
+            rightPos -= .01;
         }
         if (swapped) {
             deltaLeft.setPosition(rightPos);
@@ -421,15 +440,15 @@ abstract public class intothedeep_opmode extends OpMode{
     }
 
     public void setWristPosition() {
-        if(corners != null) {
+        if (corners != null) {
             limelight.pipelineSwitch(4);
 
             int expansion = 5;
             //x, y, w, h, cl, cu
             double[] inputs = {Math.max(0, corners.get(0).get(0) - expansion),
                     Math.max(0, corners.get(0).get(1) - expansion),
-                    Math.min(corners.get(1).get(0) - corners.get(0).get(0) + 2 * expansion, 960-Math.max(0, corners.get(0).get(0) - expansion)),
-                    Math.min(corners.get(3).get(1) - corners.get(0).get(1) + 2 * expansion, 720-Math.max(0, corners.get(0).get(1) - expansion)),
+                    Math.min(corners.get(1).get(0) - corners.get(0).get(0) + 2 * expansion, 960 - Math.max(0, corners.get(0).get(0) - expansion)),
+                    Math.min(corners.get(3).get(1) - corners.get(0).get(1) + 2 * expansion, 720 - Math.max(0, corners.get(0).get(1) - expansion)),
                     LLcannyLower, LLcannyUpper}; // canny threshold bounds
             limelight.updatePythonInputs(inputs);
             LLResult pyResult = limelight.getLatestResult();
@@ -502,7 +521,7 @@ abstract public class intothedeep_opmode extends OpMode{
         double preLB = -y - x;
 
         double max = Math.max(Math.max(Math.max(Math.max(preRF, preRB), preLB), preLF), 1);
-        impulseFactor = (impulseFactor + 1/impulsePeriod) % 1;
+        impulseFactor = (impulseFactor + 1 / impulsePeriod) % 1;
 
         rf.setPower(impulseFactor * preRF / max);
         lf.setPower(impulseFactor * preLF / max);
@@ -515,7 +534,7 @@ abstract public class intothedeep_opmode extends OpMode{
     }
 
     @Override
-    public void stop(){
+    public void stop() {
         rf.setPower(0);
         lf.setPower(0);
         rb.setPower(0);
@@ -526,7 +545,7 @@ abstract public class intothedeep_opmode extends OpMode{
         ls.setPower(0);
     }
 
-    public void childLoop(){
+    public void childLoop() {
 
     }
 }

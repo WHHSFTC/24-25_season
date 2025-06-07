@@ -26,7 +26,7 @@ import pedroPathing.constants.LConstants;
 
 @Config
 @Autonomous
-public class intothedeep_auto extends intothedeep_opmode{
+public class intothedeep_auto extends intothedeep_opmode {
 
     public Follower follower;
     public Timer pathTimer;
@@ -34,7 +34,7 @@ public class intothedeep_auto extends intothedeep_opmode{
 
     public int pathState = 0;
 
-    public void autonomousPathUpdate(){
+    public void autonomousPathUpdate() {
 
     }
 
@@ -44,7 +44,7 @@ public class intothedeep_auto extends intothedeep_opmode{
     }
 
     @Override
-    public void init(){
+    public void init() {
         super.init();
         pathTimer = new Timer();
         opmodeTimer = new Timer();
@@ -62,57 +62,57 @@ public class intothedeep_auto extends intothedeep_opmode{
     }
 
     @Override
-        public void start(){
-            super.start();
-            opmodeTimer.resetTimer();
-            setPathState(0);
+    public void start() {
+        super.start();
+        opmodeTimer.resetTimer();
+        setPathState(0);
     }
 
     @Override
-        public void childLoop(){
-            super.childLoop();
+    public void childLoop() {
+        super.childLoop();
 
-            if(exAddPower){
-                exConstantPID = -1.0;
-            }else{
-                exConstantPID = 0.0;
-            }
+        if (exAddPower) {
+            exConstantPID = -1.0;
+        } else {
+            exConstantPID = 0.0;
+        }
 
-            if(veAddPowerDown){
-                veConstantPID = -0.8;
-            }else if(veHangPower){
-                veConstantPID = -2.0;
-            }
-            else if(veAddPowerUp){
-                veConstantPID = 1.0;
-            }else{
-                veConstantPID = 0.0;
-            }
+        if (veAddPowerDown) {
+            veConstantPID = -0.8;
+        } else if (veHangPower) {
+            veConstantPID = -2.0;
+        } else if (veAddPowerUp) {
+            veConstantPID = 1.0;
+        } else {
+            veConstantPID = 0.0;
+        }
 
-            follower.update();
-            autonomousPathUpdate();
+        follower.update();
+        autonomousPathUpdate();
 
-            extendo.setPower(slidesPidExtendo.calculatePowerExtendo(slidePositionTargetEx) + exConstantPID);
-            slidesPidExtendo.updateEx(extendo.getCurrentPosition(), timeGap);
+        extendo.setPower(slidesPidExtendo.calculatePowerExtendo(slidePositionTargetEx) + exConstantPID);
+        slidesPidExtendo.updateEx(extendo.getCurrentPosition(), timeGap);
 
-            verticalPower = 2.0*slidesPidVertical.calculatePowerVertical(slidePositionTargetVe) + veConstantPID;
-            ls.setPower(verticalPower);
-            ms.setPower(verticalPower);
-            rs.setPower(verticalPower);
-            slidesPidVertical.updateVe((ms.getCurrentPosition()), timeGap);
+        verticalPower = 2.0 * slidesPidVertical.calculatePowerVertical(slidePositionTargetVe) + veConstantPID;
+        ls.setPower(verticalPower);
+        ms.setPower(verticalPower);
+        rs.setPower(verticalPower);
+        slidesPidVertical.updateVe((ms.getCurrentPosition()), timeGap);
 
-            telemetry.addData("path state", pathState);
-            telemetry.addData("x", follower.getPose().getX());
-            telemetry.addData("y", follower.getPose().getY());
-            telemetry.addData("heading", follower.getPose().getHeading());
-            telemetry.addData("path state", pathState);
-            telemetry.addData("tx", tx);
-            telemetry.addData("ty", ty);
-            telemetry.addData("limelight", limelight.getStatus());
-            telemetry.update();
+        telemetry.addData("path state", pathState);
+        telemetry.addData("x", follower.getPose().getX());
+        telemetry.addData("y", follower.getPose().getY());
+        telemetry.addData("heading", follower.getPose().getHeading());
+        telemetry.addData("path state", pathState);
+        telemetry.addData("tx", tx);
+        telemetry.addData("ty", ty);
+        telemetry.addData("limelight", limelight.getStatus());
+        telemetry.update();
     }
+
     @Override
-    public void stop(){
+    public void stop() {
 
     }
 }
