@@ -104,21 +104,31 @@ abstract public class intothedeep_opmode extends OpMode {
 
     // --- OUTPUT CONSTANTS ---
 
+    /*
+        GOOGLE SHEETS TUNER (includes instructions, no programming experience required):
+        https://docs.google.com/spreadsheets/d/1KAFcJOfxUgR9hXGt-BMuBUUxgMjD4Pp8NXrtor6FHRo/edit?usp=sharing
+
+        TUNING NOTES:
+        Date: 6/15
+        Functionality: Relatively correct positions, but not functional
+
+     */
+
     // Pretransfer Position - Slightly above transfer.
-    public static double deltaRightPreTransfer = 0.48;
-    public static double deltaLeftPreTransfer = 0.55;
+    public static double deltaRightPreTransfer = 0.42; // 0.43; // 0.48;
+    public static double deltaLeftPreTransfer = 0.46; // 0.54; // 0.55;
 
-    // Transfer Position - Output arm resting on the intake.
-    public static double deltaRightTransferPos = 0.63;
-    public static double deltaLeftTransferPos = 0.41;
+    // Transfer Position - Output arm resting on the intake funnel.
+    public static double deltaRightTransferPos = .57; // 0.61; // 0.63;
+    public static double deltaLeftTransferPos = .35; // 0.40; // 0.41;
 
-    // Sample Position - Output arm upright, facing backward for scoring in bucket
-    public static double deltaRightSamplePos = 0.40;
-    public static double deltaLeftSamplePos = 0.64;
+    // Sample Position - Output arm upright, wrist facing backward for scoring in bucket
+    public static double deltaRightSamplePos = .42; // 0.38; // 0.40;
+    public static double deltaLeftSamplePos = .51; // 0.63; // 0.64;
 
-    // Specimen Position - Output arm slanted sideways and down, angled to score on the chamber
-    public static double deltaRightSpecimenPos = 0.23;
-    public static double deltaLeftSpecimenPos = 0.52;
+    // Specimen Position - Output arm hugging the robot, nosepiece snugly fits alongside the robot and is horizontally level
+    public static double deltaRightSpecimenPos = 0.08; // 0.21; // 0.23;
+    public static double deltaLeftSpecimenPos = 0.38; // 0.51; // 0.52;
 
 
     // Output wrist positions
@@ -215,12 +225,13 @@ abstract public class intothedeep_opmode extends OpMode {
         ls = hardwareMap.get(DcMotor.class, "ls");
         rs = hardwareMap.get(DcMotor.class, "rs");
         ms = hardwareMap.get(DcMotor.class, "ms");
-
-//        ls.setDirection(DcMotorSimple.Direction.REVERSE);
-//        rs.setDirection(DcMotorSimple.Direction.REVERSE);
-//        ms.setDirection(DcMotorSimple.Direction.FORWARD);
-
+        /*
+        ls.setDirection(DcMotorSimple.Direction.REVERSE);
+        rs.setDirection(DcMotorSimple.Direction.REVERSE);
+        ms.setDirection(DcMotorSimple.Direction.FORWARD);
+        */
         // Negated the ls rs ms due to reversed stringing (6/3)
+
         ls.setDirection(DcMotorSimple.Direction.FORWARD);
         rs.setDirection(DcMotorSimple.Direction.FORWARD);
         ms.setDirection(DcMotorSimple.Direction.REVERSE);
@@ -365,9 +376,19 @@ abstract public class intothedeep_opmode extends OpMode {
         telemetry.addData("outputWristPos", "output wrist position: " + outputWrist.getPosition());
         telemetry.addData("outputClawPos", "out claw position: " + outputClaw.getPosition());
         */
-        telemetry.addData("deltaLeft", "deltaLeft position: " + deltaLeft.getPosition());
-        telemetry.addData("deltaRight", "deltaRight position: " + deltaRight.getPosition());
-        telemetry.addData("ms position", "ms position: " + ms.getCurrentPosition());
+        telemetry.addData("deltaLeft: ", deltaLeft.getPosition());
+        telemetry.addData("deltaRight: ", deltaRight.getPosition());
+
+        telemetry.addData("alpha: ", alpha.getPosition());
+        telemetry.addData("beta: ", beta.getPosition());
+
+        telemetry.addData("ms position: ", ms.getCurrentPosition());
+
+        if (extendoSlidesLimit.isPressed()) {
+            telemetry.addData("Extendo Limit: ", "Pressed!");
+        } else {
+            telemetry.addData("Extendo Limit: ", "Not Pressed!");
+        }
         /*
         //telemetry.addData("Error Extendo", "Error Extendo: " + (slidePositionTargetEx - extendo.getCurrentPosition()));
         telemetry.addData("extendo position", "extendo position: " + extendo.getCurrentPosition());
@@ -394,6 +415,35 @@ abstract public class intothedeep_opmode extends OpMode {
         dashboard.sendTelemetryPacket(packet);
 
          */
+    }
+
+    public void drive(double x, double y, double rotation) {
+        double frontLeftPower;
+        double frontRightPower;
+        double backLeftPower;
+        double backRightPower;
+
+        frontLeftPower = y + x + rotation;
+        frontRightPower = y - x - rotation;
+        backLeftPower = y - x + rotation;
+        backRightPower = y + x - rotation;
+
+        // Find the maximum power value
+        double maxPower = Math.max(1.0, Math.abs(frontLeftPower));
+        maxPower = Math.max(maxPower, Math.abs(frontRightPower));
+        maxPower = Math.max(maxPower, Math.abs(backLeftPower));
+        maxPower = Math.max(maxPower, Math.abs(backRightPower));
+
+        // Scale motor powers down if they exceed 1.0
+        frontLeftPower /= maxPower;
+        frontRightPower /= maxPower;
+        backLeftPower /= maxPower;
+        backRightPower /= maxPower;
+
+        lf.setPower(frontLeftPower);
+        rf.setPower(frontRightPower);
+        lb.setPower(backLeftPower);
+        rb.setPower(backRightPower);
     }
 
     public void calibrateOutput() {

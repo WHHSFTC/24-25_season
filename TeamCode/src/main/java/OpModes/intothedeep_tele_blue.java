@@ -291,6 +291,7 @@ public class intothedeep_tele_blue extends intothedeep_opmode {
                 }
             case OUTPUTARM_TRANSFER:
                 checkForA();
+                // Extendo Limit is not always pressed. Still an issue as of 6/15, will be fixed.
                 if (extendoSlidesLimit.isPressed() && alpha.getPosition() < alphaTransferPos + 0.01) {
                     if (isCorrectColor(intakeColor)) {
                         exAddPower = true;
@@ -355,7 +356,7 @@ public class intothedeep_tele_blue extends intothedeep_opmode {
                 veAddPowerDown = false;
                 exAddPower = false;
                 exConstantPID = 0.0;
-                slidePositionTargetVe = 450;
+                slidePositionTargetVe = 500;
                 deltaLeft.setPosition(deltaLeftSpecimenPos);
                 deltaRight.setPosition(deltaRightSpecimenPos);
                 outputWrist.setPosition(outputWristSpecimenPos);
@@ -374,7 +375,7 @@ public class intothedeep_tele_blue extends intothedeep_opmode {
             case SPECIMEN_OUTPUT:
                 if ((gamepad2.x && !gamepad2prev.x)) {
                     outputWrist.setPosition(0.15);
-                    slidePositionTargetVe += 425;
+                    slidePositionTargetVe += 440;
                     outputClaw.setPwmRange(new PwmControl.PwmRange(2000, 2500));
                     telestate = TeleState.OUTPUTCLAWSPECIMEN_OPEN;
                 }
@@ -658,7 +659,7 @@ public class intothedeep_tele_blue extends intothedeep_opmode {
         telemetry.addData("vertical power", verticalPower);
         telemetry.addData("tele state", "tele state: " + telestate);
         telemetry.addData("correct color", isCorrectColor(intakeColor));
-        telemetry.addData("limelight status", limelight.getStatus());
          */
+        //telemetry.addData("limelight status", limelight.getStatus());
     }
 }

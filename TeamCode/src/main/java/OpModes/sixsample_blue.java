@@ -12,11 +12,11 @@ import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 @Autonomous (preselectTeleOp = "intothedeep_tele_blue")
 public class sixsample_blue extends intothedeep_auto{
     private final Pose startPos = new Pose(7.21, 103.1791, Math.toRadians(270));
-    private final Pose scorePos = new Pose(13.4, 127.5, Math.toRadians(315)); //13.5, 126.3
+    private final Pose scorePos = new Pose(15.2, 127.4, Math.toRadians(315)); //13.5, 126.3
     private final Pose preloadControlPos = new Pose(27.52, 115.77, Math.toRadians(315));
-    private final Pose sample1Pos = new Pose(17.3, 124.5, Math.toRadians(350));
-    private final Pose sample2Pos = new Pose(16.2, 127.5, Math.toRadians(5));
-    private final Pose sample3Pos = new Pose(17.5, 131.2, Math.toRadians(18));
+    private final Pose sample1Pos = new Pose(16.3, 124.5, Math.toRadians(350)); //x-1
+    private final Pose sample2Pos = new Pose(15.2, 127.5, Math.toRadians(5));//x-1
+    private final Pose sample3Pos = new Pose(16.5, 131.2, Math.toRadians(18));//x-1
     private final Pose parkControlPos = new Pose(55, 135, Math.toRadians(90));
     private final Pose subControlPos1 = new Pose(59.55, 120.28, Math.toRadians(290));
     private final Pose subControlPos2 = new Pose(59.55, 120.28, Math.toRadians(315));
@@ -118,6 +118,7 @@ public class sixsample_blue extends intothedeep_auto{
 
             case 3:
                 if(extendo.getCurrentPosition() > 300 && !follower.isBusy()){
+                    drive(0,-10,0);
                     slidePositionTargetVe = slideMinVe;
                     deltaRight.setPosition(deltaRightPreTransfer);
                     deltaLeft.setPosition(deltaLeftPreTransfer);
