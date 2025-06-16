@@ -363,7 +363,7 @@ public class intothedeep_tele_red extends intothedeep_opmode {
                 veAddPowerDown = false;
                 exAddPower = false;
                 exConstantPID = 0.0;
-                slidePositionTargetVe = 450;
+                slidePositionTargetVe = 500;
                 deltaLeft.setPosition(deltaLeftSpecimenPos);
                 deltaRight.setPosition(deltaRightSpecimenPos);
                 outputWrist.setPosition(outputWristSpecimenPos);
@@ -382,7 +382,7 @@ public class intothedeep_tele_red extends intothedeep_opmode {
             case SPECIMEN_OUTPUT:
                 if((gamepad2.x && !gamepad2prev.x)){
                     outputWrist.setPosition(0.15);
-                    slidePositionTargetVe += 425;
+                    slidePositionTargetVe += 440;
                     outputClaw.setPwmRange(new PwmControl.PwmRange(2000,2500));
                     telestate = intothedeep_tele_blue.TeleState.OUTPUTCLAWSPECIMEN_OPEN;
                 }
