@@ -115,20 +115,21 @@ abstract public class intothedeep_opmode extends OpMode {
      */
 
     // Pretransfer Position - Slightly above transfer.
-    public static double deltaRightPreTransfer = 0.42; // 0.43; // 0.48;
-    public static double deltaLeftPreTransfer = 0.46; // 0.54; // 0.55;
+
+    public static double deltaRightPreTransfer = .43;//0.42 // 0.43; // 0.48;
+    public static double deltaLeftPreTransfer = .6; //0.46 // 0.54; // 0.55;
 
     // Transfer Position - Output arm resting on the intake funnel.
-    public static double deltaRightTransferPos = .57; // 0.61; // 0.63;
-    public static double deltaLeftTransferPos = .35; // 0.40; // 0.41;
+    public static double deltaRightTransferPos = .5; //.57 // 0.61; // 0.63;
+    public static double deltaLeftTransferPos = .53; //.35 // 0.40; // 0.41;
 
     // Sample Position - Output arm upright, wrist facing backward for scoring in bucket
-    public static double deltaRightSamplePos = .42; // 0.38; // 0.40;
-    public static double deltaLeftSamplePos = .51; // 0.63; // 0.64;
+    public static double deltaRightSamplePos = 0.32; //.42 // 0.38; // 0.40;
+    public static double deltaLeftSamplePos = .73; //.51 // 0.63; // 0.64;
 
     // Specimen Position - Output arm hugging the robot, nosepiece snugly fits alongside the robot and is horizontally level
-    public static double deltaRightSpecimenPos = 0.08; // 0.21; // 0.23;
-    public static double deltaLeftSpecimenPos = 0.38; // 0.51; // 0.52;
+    public static double deltaRightSpecimenPos = .14; //.08 // 0.21; // 0.23;
+    public static double deltaLeftSpecimenPos = 0.63; //.38 // 0.51; // 0.52;
 
 
     // Output wrist positions
@@ -279,8 +280,8 @@ abstract public class intothedeep_opmode extends OpMode {
         sampleOutputState = false;
 
         // Bahand Debugging Output 5/20
-        telemetry.addData("deltaLeft", "deltaLeft position: " + deltaLeft.getPosition());
         telemetry.addData("deltaRight", "deltaRight position: " + deltaRight.getPosition());
+        telemetry.addData("deltaLeft", "deltaLeft position: " + deltaLeft.getPosition());
 
         telemetry.addData("ms position", "ms position: " + ms.getCurrentPosition());
         telemetry.addData("extendo position", "extendo position: " + extendo.getCurrentPosition());
@@ -451,20 +452,20 @@ abstract public class intothedeep_opmode extends OpMode {
         double rightPos = deltaRight.getPosition();
         boolean swapped = false;
         if (gamepad1.dpad_up) {
-            leftPos += .01;
-            rightPos -= .01;
+            leftPos += .005;
+            rightPos -= .005;
         }
         if (gamepad1.dpad_down) {
-            leftPos -= .01;
-            rightPos += .01;
+            leftPos -= .005;
+            rightPos += .005;
         }
         if (gamepad1.dpad_left) {
-            leftPos += .01;
-            rightPos += .01;
+            leftPos += .005;
+            rightPos += .005;
         }
         if (gamepad1.dpad_right) {
-            leftPos -= .01;
-            rightPos -= .01;
+            leftPos -= .005;
+            rightPos -= .005;
         }
         if (swapped) {
             deltaLeft.setPosition(rightPos);
