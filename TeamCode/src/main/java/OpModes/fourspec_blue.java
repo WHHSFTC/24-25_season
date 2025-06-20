@@ -279,7 +279,7 @@ public class fourspec_blue extends intothedeep_auto{
                 break;
 
             case 21:
-                if(extendoSlidesLimit.isPressed()){
+                if(extendo.getCurrentPosition() < intakeThreshold){
                     exAddPower = true;
                     exConstantPID = -1.5;
                     deltaLeft.setPosition(deltaLeftTransferPos);
@@ -382,7 +382,7 @@ public class fourspec_blue extends intothedeep_auto{
                 break;
 
             case 31:
-                if(extendoSlidesLimit.isPressed()){
+                if(extendo.getCurrentPosition() < intakeThreshold){
                     exAddPower = true;
                     exConstantPID = -1.5;
                     deltaLeft.setPosition(deltaLeftTransferPos);
@@ -485,7 +485,7 @@ public class fourspec_blue extends intothedeep_auto{
                 break;
 
             case 41:
-                if(extendoSlidesLimit.isPressed()){
+                if(extendo.getCurrentPosition() < intakeThreshold){
                     exAddPower = true;
                     exConstantPID = -1.5;
                     deltaLeft.setPosition(deltaLeftTransferPos);

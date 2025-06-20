@@ -283,7 +283,7 @@ public class intothedeep_tele_blue extends intothedeep_opmode {
                 break;
             case SIDE_INTAKE:
                 checkForA();
-                if (extendoSlidesLimit.isPressed() && alpha.getPosition() < alphaTransferPos + 0.01) {
+                if (extendo.getCurrentPosition() < intakeThreshold && alpha.getPosition() < alphaTransferPos + 0.01) {
                     alpha.setPosition(alphaTransferPos);
                     beta.setPosition(betaTransferPos);
                     telestate = TeleState.OUTPUTARM_TRANSFER;
@@ -292,7 +292,8 @@ public class intothedeep_tele_blue extends intothedeep_opmode {
             case OUTPUTARM_TRANSFER:
                 checkForA();
                 // Extendo Limit is not always pressed. Still an issue as of 6/15, will be fixed.
-                if (extendoSlidesLimit.isPressed() && alpha.getPosition() < alphaTransferPos + 0.01) {
+                // extendoSlidesLimit.isPressed()
+                if (extendo.getCurrentPosition() < intakeThreshold && alpha.getPosition() < alphaTransferPos + 0.01) {
                     if (isCorrectColor(intakeColor)) {
                         exAddPower = true;
                         exConstantPID = -1.5;

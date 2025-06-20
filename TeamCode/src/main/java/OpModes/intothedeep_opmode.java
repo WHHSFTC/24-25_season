@@ -116,12 +116,12 @@ abstract public class intothedeep_opmode extends OpMode {
 
     // Pretransfer Position - Slightly above transfer.
 
-    public static double deltaRightPreTransfer = .43;//0.42 // 0.43; // 0.48;
+    public static double deltaRightPreTransfer = .43; //0.42 // 0.43; // 0.48;
     public static double deltaLeftPreTransfer = .6; //0.46 // 0.54; // 0.55;
 
     // Transfer Position - Output arm resting on the intake funnel.
-    public static double deltaRightTransferPos = .5; //.57 // 0.61; // 0.63;
-    public static double deltaLeftTransferPos = .53; //.35 // 0.40; // 0.41;
+    public static double deltaRightTransferPos = .51; //.57 // 0.61; // 0.63;
+    public static double deltaLeftTransferPos = .51; //.35 // 0.40; // 0.41;
 
     // Sample Position - Output arm upright, wrist facing backward for scoring in bucket
     public static double deltaRightSamplePos = 0.32; //.42 // 0.38; // 0.40;
@@ -136,6 +136,10 @@ abstract public class intothedeep_opmode extends OpMode {
     public static double outputWristStraightPos = 0.94;
     public static double outputWristSwitchPos = 0.27;
     public static double outputWristSpecimenPos = 0.15;
+
+    // Threshold
+    //
+    public static double intakeThreshold = -10;
 
     // Output claw positions
     public static double outputClawClosedPos = 0.32;
@@ -384,6 +388,7 @@ abstract public class intothedeep_opmode extends OpMode {
         telemetry.addData("beta: ", beta.getPosition());
 
         telemetry.addData("ms position: ", ms.getCurrentPosition());
+        telemetry.addData("extendo position",  + extendo.getCurrentPosition());
 
         if (extendoSlidesLimit.isPressed()) {
             telemetry.addData("Extendo Limit: ", "Pressed!");
