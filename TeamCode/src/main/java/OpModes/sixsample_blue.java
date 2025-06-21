@@ -151,7 +151,7 @@ public class sixsample_blue extends intothedeep_auto{
                 break;
 
             case 6:
-                if(extendoSlidesLimit.isPressed() && ms.getCurrentPosition() < 30){
+                if(extendo.getCurrentPosition() < intakeThreshold && ms.getCurrentPosition() < 30){
                     exAddPower = false;
                     deltaLeft.setPosition(deltaLeftTransferPos);
                     deltaRight.setPosition(deltaRightTransferPos);
@@ -250,7 +250,7 @@ public class sixsample_blue extends intothedeep_auto{
                 break;
 
             case 16:
-                if(extendoSlidesLimit.isPressed() && ms.getCurrentPosition() < 30){
+                if(extendo.getCurrentPosition() < intakeThreshold && ms.getCurrentPosition() < 30){
                     exAddPower = false;
                     deltaLeft.setPosition(deltaLeftTransferPos);
                     deltaRight.setPosition(deltaRightTransferPos);
@@ -347,7 +347,7 @@ public class sixsample_blue extends intothedeep_auto{
                 break;
 
             case 26:
-                if(extendoSlidesLimit.isPressed() && ms.getCurrentPosition() < 30){
+                if(extendo.getCurrentPosition() < intakeThreshold && ms.getCurrentPosition() < 30){
                     exAddPower = false;
                     deltaLeft.setPosition(deltaLeftTransferPos);
                     deltaRight.setPosition(deltaRightTransferPos);

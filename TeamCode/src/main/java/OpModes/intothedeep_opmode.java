@@ -263,7 +263,7 @@ abstract public class intothedeep_opmode extends OpMode {
         extendoSlidesLimit = hardwareMap.get(TouchSensor.class, "extendoSlidesLimit");
         carabinerLimit = hardwareMap.get(TouchSensor.class, "carabinerLimit");
         ultrasonicSensorChamber = hardwareMap.get(AnalogInput.class, "chamberSensor");
-        intakeColor = hardwareMap.get(RevColorSensorV3.class, "colorsensor");
+        // intakeColor = hardwareMap.get(RevColorSensorV3.class, "colorsensor");
 
         limelight = hardwareMap.get(Limelight3A.class, "limelight");
 
@@ -480,19 +480,19 @@ abstract public class intothedeep_opmode extends OpMode {
             deltaRight.setPosition(rightPos);
         }
 
-        if (gamepad1.left_bumper) {
-            deltaLeftTransferPos = deltaLeft.getPosition();
-            deltaRightTransferPos = deltaRight.getPosition();
-
-            deltaLeftPreTransfer = deltaLeftTransferPos + .14;
-            deltaRightPreTransfer = deltaRightTransferPos - .15;
-
-            deltaLeftSamplePos = deltaLeftTransferPos + .23;
-            deltaRightSamplePos = deltaRightTransferPos - .23;
-
-            deltaLeftSpecimenPos = deltaLeftTransferPos + .11;
-            deltaRightSpecimenPos = deltaRightTransferPos - .40;
-        }
+//        if (gamepad1.left_bumper) {
+//            deltaLeftTransferPos = deltaLeft.getPosition();
+//            deltaRightTransferPos = deltaRight.getPosition();
+//
+//            deltaLeftPreTransfer = deltaLeftTransferPos + .14;
+//            deltaRightPreTransfer = deltaRightTransferPos - .15;
+//
+//            deltaLeftSamplePos = deltaLeftTransferPos + .23;
+//            deltaRightSamplePos = deltaRightTransferPos - .23;
+//
+//            deltaLeftSpecimenPos = deltaLeftTransferPos + .11;
+//            deltaRightSpecimenPos = deltaRightTransferPos - .40;
+//        }
     }
 
     public void setWristPosition() {

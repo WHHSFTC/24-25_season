@@ -111,31 +111,36 @@ public class intothedeep_tele_blue extends intothedeep_opmode {
         }
     }
 
-    public boolean isCorrectColor(ColorSensor sensorOutput) {
-        if (specimenOutputState || intakeClaw.getPosition() == intakeClawOpenPos || (gamepad2.dpad_left && gamepad2prev.dpad_left)) {
-            return true;
+    public boolean cancelIntake() {
+        if (gamepad2.left_bumper) {
+            return false;
         } else {
-            if (blueAlliance) {
-                if (specimenOutputState || ozoneOutputState) {
-                    return sensorOutput.blue() > 0.5 * colorThreshold && sensorOutput.red() < colorThreshold * 1.7 &&
-                            sensorOutput.green() < colorThreshold * 1.7;
-                }
-                if (sampleOutputState) {
-                    return (sensorOutput.blue() > colorThreshold || sensorOutput.green() > colorThreshold)
-                            && (sensorOutput.red() < sensorOutput.green() || sensorOutput.red() < sensorOutput.blue());
-                }
-            } else {
-                if (specimenOutputState || ozoneOutputState) {
-                    return sensorOutput.blue() < 0.5 * colorThreshold
-                            && sensorOutput.red() > colorThreshold * 1.7 && sensorOutput.green() < colorThreshold * 1.7;
-                }
-                if (sampleOutputState) {
-                    return (sensorOutput.red() > colorThreshold || sensorOutput.green() > colorThreshold)
-                            && sensorOutput.blue() < sensorOutput.green() || sensorOutput.blue() < sensorOutput.red();
-                }
-            }
             return true;
         }
+//        if (specimenOutputState || intakeClaw.getPosition() == intakeClawOpenPos || (gamepad2.dpad_left && gamepad2prev.dpad_left)) {
+//            return true;
+//        } else {
+//            if (blueAlliance) {
+//                if (specimenOutputState || ozoneOutputState) {
+//                    return sensorOutput.blue() > 0.5 * colorThreshold && sensorOutput.red() < colorThreshold * 1.7 &&
+//                            sensorOutput.green() < colorThreshold * 1.7;
+//                }
+//                if (sampleOutputState) {
+//                    return (sensorOutput.blue() > colorThreshold || sensorOutput.green() > colorThreshold)
+//                            && (sensorOutput.red() < sensorOutput.green() || sensorOutput.red() < sensorOutput.blue());
+//                }
+//            } else {
+//                if (specimenOutputState || ozoneOutputState) {
+//                    return sensorOutput.blue() < 0.5 * colorThreshold
+//                            && sensorOutput.red() > colorThreshold * 1.7 && sensorOutput.green() < colorThreshold * 1.7;
+//                }
+//                if (sampleOutputState) {
+//                    return (sensorOutput.red() > colorThreshold || sensorOutput.green() > colorThreshold)
+//                            && sensorOutput.blue() < sensorOutput.green() || sensorOutput.blue() < sensorOutput.red();
+//                }
+//            }
+//            return true;
+//        }
     }
 
     @Override
@@ -247,7 +252,7 @@ public class intothedeep_tele_blue extends intothedeep_opmode {
             case BRING_IN:
                 veAddPowerDown = false;
                 if (stateTimer.seconds() >= INTAKECLAW_TIME) {
-                    if (isCorrectColor(intakeColor)) {
+                    if (cancelIntake()) {
                         if (ozoneOutputState) {
                             intakeWrist.setPosition(intakeWristStraightPos);
                             alpha.setPosition(alphaTransferPos);
@@ -294,7 +299,7 @@ public class intothedeep_tele_blue extends intothedeep_opmode {
                 // Extendo Limit is not always pressed. Still an issue as of 6/15, will be fixed.
                 // extendoSlidesLimit.isPressed()
                 if (extendo.getCurrentPosition() < intakeThreshold && alpha.getPosition() < alphaTransferPos + 0.01) {
-                    if (isCorrectColor(intakeColor)) {
+                    if (cancelIntake()) {
                         exAddPower = true;
                         exConstantPID = -1.5;
                         deltaLeft.setPosition(deltaLeftTransferPos);
@@ -609,9 +614,6 @@ public class intothedeep_tele_blue extends intothedeep_opmode {
             intakeClaw.setPosition(intakeClawClosedPos);
         }
 
-        if (gamepad2.left_bumper) {
-            setWristPosition();
-        }
 
         if (gamepad1.right_bumper && gamepad1prev.right_bumper) {
             getLimelightPower();
